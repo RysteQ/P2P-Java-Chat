@@ -7,6 +7,8 @@
 
 ---
 
+<br>
+
 ## About
 
 This repository is meant for me and two more people to collaborate on a team project for a subject at our university. This will be worked on by three people and you will be able to find their GitHub profiles under the **[Collabarators](#collaborators)** section of the document.
