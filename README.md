@@ -20,17 +20,12 @@ This repository is meant for me and two more people to collaborate on a team pro
 This section will contain a list of the current features of the application, the features to be implementent in the future and the dropped features.
 
 Current features:
-1. None
-
-<br>
-
-Future features:
-- A simple chat application
-- A GUI
-- Encryption
-- File sharing
-- Team groups
-- A simple game
+- [ ] A simple chat application
+- [x] A GUI
+- [ ] Encryption
+- [ ] File sharing
+- [ ] Team groups
+- [ ] A simple game
 
 <br>
 
