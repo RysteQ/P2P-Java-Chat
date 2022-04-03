@@ -1,6 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.swing.text.*;
 
 
@@ -26,6 +30,7 @@ public class GUI implements ActionListener{
 	 
 	private void initializeForm() {
 		mainForm = new JFrame();
+		mainForm.getContentPane().setFont(new Font("Arial", Font.PLAIN, 12));
 
 		mainForm.setTitle("Simple P2P");
 
@@ -64,11 +69,11 @@ public class GUI implements ActionListener{
 		IPpanel.setForeground(Color.BLACK);
 		
 		textFieldPanel.setBounds(125, 365, 569, 85);
-		optionsPanel.setBounds(570, 90, 125, 230);
+		optionsPanel.setBounds(570, 125, 125, 195);
 		playPanel.setBounds(570, 320, 125, 40);
 		IPpanel.setBounds(0, 0, 125, 450);
 		convPanel.setBounds(125, 0, 435, 360);
-		newIPPanel.setBounds(570, 10, 125, 80);
+		newIPPanel.setBounds(570, 10, 125, 105);
 		
 		textFieldPanel.setBorder(null);
 		textFieldPanel.setLayout(null);
@@ -90,8 +95,9 @@ public class GUI implements ActionListener{
 		mainForm.getContentPane().add(newIPPanel);
 		mainForm.getContentPane().add(optionsPanel);
 
-		IPscrollPane.setBounds(10, 10, 105, 440);
+		IPscrollPane.setBounds(10, 30, 105, 420);
 		IPpanel.add(IPscrollPane);
+		
 
 		messagescrollPane.setBounds(0, 10, 435, 350);
 		convPanel.add(messagescrollPane);
@@ -117,7 +123,7 @@ public class GUI implements ActionListener{
 		writeMessagePane.addFocusListener(new FocusListener(){
 	        @Override
 	        public void focusGained(FocusEvent e){
-	        	if(writeMessagePane.getText().equals(" Write Something")) {
+	        	if (writeMessagePane.getText().equals(" Write Something")) {
 	        		writeMessagePane.setText("");
 	        		writeMessagePane.setForeground(Color.BLACK);
 	        	}
@@ -125,7 +131,7 @@ public class GUI implements ActionListener{
 
 			@Override
 			public void focusLost(FocusEvent e) {
-				if(writeMessagePane.getText().equals("")) {
+				if (writeMessagePane.getText().equals("")) {
 					writeMessagePane.setForeground(Color.GRAY);
 					writeMessagePane.setText(" Write Something");
 				}
@@ -135,20 +141,12 @@ public class GUI implements ActionListener{
 
 	private void initLists() {
 		list.setFont(new Font("Arial", Font.PLAIN, 12));
-		list.setSelectedIndex(0);
+		list.setSelectedIndex(-1);
 
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		IPscrollPane.setViewportView(list);
 
-		list.setModel(new AbstractListModel() {
-			String[] values = new String[] {"192.168.1.1", "192.168.1.2", "192.168.1.3", "192.168.1.4", "192.168.1.5", "192.168.1.6", "192.168.1.7", "192.168.1.8", "192.168.1.9", "192.168.1.10", "192.168.1.11", "192.168.1.12", "192.168.1.13", "192.168.1.14", "192.168.1.15", "192.168.1.16", "192.168.1.17", "192.168.1.18", "192.168.1.19", "192.168.1.20", "192.168.1.21", "192.168.1.22", "192.168.1.23", "192.168.1.24", "192.168.1.25", "192.168.1.26", "192.168.1.27", "192.168.1.28", "192.168.1.29", "192.168.1.30", "192.168.1.31", "192.168.1.32", "192.168.1.33", "192.168.1.34", "192.168.1.35", "192.168.1.36", "192.168.1.37", "192.168.1.38", "192.168.1.39", "192.168.1.40", "192.168.1.41", "192.168.1.42", "192.168.1.43", "192.168.1.44", "192.168.1.45", "192.168.1.46", "192.168.1.47", "192.168.1.48", "192.168.1.49", "192.168.1.50"};
-			public int getSize() {
-				return values.length;
-			}
-			public Object getElementAt(int index) {
-				return values[index];
-			}
-		});
+		list.setModel(listModel);
 	}
 
 	private void initButtons() {
@@ -156,7 +154,7 @@ public class GUI implements ActionListener{
 		uploadFileButton.setBounds(445, 45, 124, 40);
 		sendButton.setBounds(445, 0, 58, 40);
 		playButton.setBounds(0, 0, 125, 40);
-		addIpButton.setBounds(0, 35, 125, 30);
+		addIpButton.setBounds(0, 75, 125, 30);
 
 		voiceMessageButton.setFont(new Font("Tahoma", Font.PLAIN, 25));
 		uploadFileButton.setFont(new Font("Arial", Font.BOLD, 12));
@@ -191,28 +189,55 @@ public class GUI implements ActionListener{
 	}
 
 	private void initTextFields() {
-		newIPTextfield.setHorizontalAlignment(SwingConstants.CENTER);
-		newIPTextfield.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		newIPTextfield.setForeground(Color.GRAY);
-		newIPTextfield.setBounds(0, 0, 125, 30);
-		newIPTextfield.setText("Enter a new IP");
-		newIPPanel.add(newIPTextfield);
-		newIPTextfield.setColumns(0);
+		newNameField.setHorizontalAlignment(SwingConstants.CENTER);
+		newNameField.setFont(new Font("Arial", Font.PLAIN, 12));
+		newNameField.setForeground(Color.GRAY);
+		newNameField.setBounds(0, 0, 125, 30);
+		newNameField.setText("Enter new chat name");
+		newIPPanel.add(newNameField);
+		newNameField.setColumns(0);
 		
-		newIPTextfield.addFocusListener(new FocusListener(){
+		newIPField = new JTextField();
+		newIPField.setFont(new Font("Arial", Font.PLAIN, 12));
+		newIPField.setHorizontalAlignment(SwingConstants.CENTER);
+		newIPField.setForeground(Color.GRAY);
+		newIPField.setText("Enter new chat IP");
+		newIPField.setBounds(0, 35, 125, 30);
+		newIPPanel.add(newIPField);
+		newIPField.setColumns(10);
+		
+		newNameField.addFocusListener(new FocusListener(){
 	        @Override
 	        public void focusGained(FocusEvent e){
-	        	if(newIPTextfield.getText().equals("Enter a new IP")) {
-	        		newIPTextfield.setText("");
+	        	if (newNameField.getText().equals("Enter new chat name")) {
+	        		newNameField.setText("");
+	        		newNameField.setForeground(Color.BLACK);
 	        	}
-	        	newIPTextfield.setForeground(Color.BLACK);
 	        }
 
 			@Override
 			public void focusLost(FocusEvent e) {
-				if(newIPTextfield.getText().equals("")) {
-					newIPTextfield.setForeground(Color.GRAY);
-					newIPTextfield.setText("Enter a new IP");
+				if (newNameField.getText().equals("")) {
+					newNameField.setForeground(Color.GRAY);
+					newNameField.setText("Enter new chat name");
+				}
+			}
+	    });
+		
+		newIPField.addFocusListener(new FocusListener(){
+	        @Override
+	        public void focusGained(FocusEvent e){
+	        	if (newIPField.getText().equals("Enter new chat IP")) {
+	        		newIPField.setText("");
+	        		newIPField.setForeground(Color.BLACK);
+	        	}
+	        }
+
+			@Override
+			public void focusLost(FocusEvent e) {
+				if (newIPField.getText().equals("")) {
+					newIPField.setForeground(Color.GRAY);
+					newIPField.setText("Enter new chat IP");
 				}
 			}
 	    });
@@ -223,6 +248,13 @@ public class GUI implements ActionListener{
 		optionsLabel.setFont(new Font("Arial", Font.PLAIN, 18));
 		optionsLabel.setBounds(0, 0, 115, 20);
 		optionsPanel.add(optionsLabel);
+		
+		IPlabel.setFont(new Font("Arial", Font.BOLD, 21));
+		IPlabel.setHorizontalAlignment(SwingConstants.CENTER);
+		IPlabel.setBounds(10, 11, 105, 19);
+		ImageIcon IPicon = new ImageIcon(this.getClass().getResource("/ip-address.png"));
+		IPlabel.setIcon(IPicon);
+		IPpanel.add(IPlabel);
 	}
 		
 	private void initSeparators() {	
@@ -251,14 +283,27 @@ public class GUI implements ActionListener{
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == sendButton) {
-			if((!writeMessagePane.getText().equals(" Wwrite Something")) && (!writeMessagePane.getText().equals(""))) {
+		if (e.getSource() == sendButton) {
+			if ((writeMessagePane.getText().equals("write Something") && writeMessagePane.getText().equals("")) == false) {
 				appendToPane(messagePane, writeMessagePane.getText());
 				writeMessagePane.setText("");
 			}
 		}
-	
-		
+		if (e.getSource() == addIpButton) {
+			if ((newIPField.getText().equals(("Enter new chat IP")) && newIPField.getText().equals((""))) == false) {
+				if ((newNameField.getText().equals(("Enter new chat name")) && newNameField.getText().equals((""))) == false) {
+					addIP(newIPField.getText(), newNameField.getText());
+					newNameField.setText("");
+					newIPField.setText("");
+				}
+				else {
+					JOptionPane.showMessageDialog(null, "Please enter name!", "Name field is empty", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+			else {
+				JOptionPane.showMessageDialog(null, "Please enter IP!", "IP field is empty", JOptionPane.ERROR_MESSAGE);
+			}
+		}	
 	}
 	
 	public static void appendToPane(JTextPane pane, String txt) {
@@ -266,8 +311,23 @@ public class GUI implements ActionListener{
 		Style style = pane.addStyle(txt, null);
 		StyleConstants.setForeground(style, Color.WHITE);
 		StyleConstants.setBackground(style,Color.GRAY);
-		try { doc.insertString(doc.getLength(),"\n " + txt + " ", style); }
+
+		try { 
+			doc.insertString(doc.getLength(),"\n " + txt + " ", style); 
+		}
         catch (BadLocationException e){}
+	}
+	
+	public void addIP(String IP, String Name) {
+		if (IPs.containsKey(IP) == false) {
+			IPs.put(IP, Name);
+			names.add(Name);
+			IPvalues.add(IP);
+			listModel.addElement(Name);
+		}
+		else {
+			JOptionPane.showMessageDialog(null, "IP already exists", "Could not add IP", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 	
 	
@@ -294,10 +354,21 @@ public class GUI implements ActionListener{
 	private JTextPane messagePane = new JTextPane();
 	private JTextPane writeMessagePane = new JTextPane();
 	
+	private JTextField newNameField = new JTextField();
+	private JTextField newIPField = new JTextField();
+	
 	private JList list = new JList();
-	private JTextField newIPTextfield = new JTextField();
+	
 	private JComboBox Theme = new JComboBox();
 	private JRadioButton enableEncryption = new JRadioButton("Encryption");
 	private JSeparator separator = new JSeparator();
+	
 	private JLabel optionsLabel = new JLabel("OPTIONS");
+	private JLabel IPlabel = new JLabel("IP List");
+	
+	private Map<String, String> IPs = new HashMap<>();
+	private ArrayList<String> IPvalues = new ArrayList<>();
+	private ArrayList<String> names = new ArrayList<>();
+	
+	private DefaultListModel listModel = new DefaultListModel();
 }
