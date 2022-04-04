@@ -20,7 +20,6 @@ This repository is meant for me and two more people to collaborate on a team pro
 This section will contain a list of the current features of the application, the features to be implementent in the future and the dropped features.
 
 Current features:
-- [ ] A simple chat application
 - [x] A GUI
 - [ ] Encryption
 - [ ] File sharing
@@ -39,5 +38,3 @@ Dropped features:
 [RysteQ](https://github.com/RysteQ)
 
 [Alex](https://github.com/alexmagd)
-
-[80gak](https://github.com/80gak?fbclid=IwAR3Tmw_LSi7aatDgi3bnZ1Ed36PQcCtzLWMSZMT6hpNqpUHb8-YC3xU9ZAk)
