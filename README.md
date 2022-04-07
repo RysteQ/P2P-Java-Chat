@@ -29,6 +29,7 @@ Current features:
 - [ ] File sharing
 - [x] Team groups
 - [ ] A simple game
+- [ ] Voice chat
 
 <br>
 
