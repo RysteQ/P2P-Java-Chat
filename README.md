@@ -3,7 +3,7 @@
 **Table of contents**
 1. **[About](#about)**
 2. **[Features](#features)**
-4. **[Collabarators](#collaborators)**
+4. **[Collaborators](#collaborators)**
 
 ---
 
@@ -11,7 +11,7 @@
 
 ## About
 
-This repository is meant for me and two more people to collaborate on a team project for a subject at our university. This will be worked on by three people and you will be able to find their GitHub profiles under the **[Collabarators](#collaborators)** section of the document.
+This repository is meant for me and two more people (only one of them helped so far) to collaborate on a team project for a subject at our university. You can find everyone that helped in this project under the **[Collabarators](#collaborators)** section of the document.
 
 *Note: This is the current state of the code
 
@@ -29,7 +29,7 @@ Current features:
 - [ ] File sharing
 - [x] Team groups
 - [ ] A simple game
-- [ ] Voice chat
+- [ ] Voice Chat
 
 <br>
 
