@@ -13,6 +13,10 @@
 
 This repository is meant for me and two more people to collaborate on a team project for a subject at our university. This will be worked on by three people and you will be able to find their GitHub profiles under the **[Collabarators](#collaborators)** section of the document.
 
+*Note: This is the current state of the code
+
+![SPAGHETT](/misc/SPAGHETT.png)
+
 <br>
 
 ## Features
