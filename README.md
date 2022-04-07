@@ -23,7 +23,7 @@ Current features:
 - [x] A GUI
 - [ ] Encryption
 - [ ] File sharing
-- [ ] Team groups
+- [x] Team groups
 - [ ] A simple game
 
 <br>
