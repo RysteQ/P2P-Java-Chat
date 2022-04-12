@@ -5,8 +5,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import javax.swing.JTextPane;
-
+import javax.swing.*;
 
 public class Networking {
 	public static class host extends Thread {
@@ -17,6 +16,7 @@ public class Networking {
 		
 		public void bind() throws InterruptedException 
 		{
+			Constants constants = new Constants();
 			short availableSlot;
 			
 			while (true)
@@ -25,6 +25,7 @@ public class Networking {
 				{
 					availableSlot = availableSlot();
 					
+					// save the user input / output stream and username
 					if (availableSlot != -1) 
 					{
 						serverSocket = new ServerSocket(portNumber + portOffset);
@@ -32,10 +33,27 @@ public class Networking {
 
 						inputStream[availableSlot] = new BufferedReader(new InputStreamReader(clientSocket[availableSlot].getInputStream()));
 						outputStream[availableSlot] = new PrintWriter(clientSocket[availableSlot].getOutputStream(), true);
+						usernames[availableSlot] = inputStream[availableSlot].readLine();
 						
 						changeAvailableSlotStatus(availableSlot, false, clientSocket[availableSlot]);
 						
 						portOffset++;
+						
+						// broadcast the username list change to all users
+						broadcastMessage(constants.START_USERNAME_CHANGE_INSTRUCTION);
+						
+						usernameListModel.clear();
+						
+						for (int i = 0; i < maximumClients; i++) {
+							if (availableSlots[i] == false) {
+								usernameListModel.addElement(usernames[i]);
+								broadcastMessage("@" + usernames[i]);	
+							}
+						}
+						
+						usernameList.setModel(usernameListModel);
+						
+						broadcastMessage(constants.END_USERNAME_CHANGE_INSTRUCTION);
 					}
 				} catch (IOException e) 
 				{
@@ -112,6 +130,15 @@ public class Networking {
 			return IPList;
 		}
 
+		public String[] getUsernameList() {
+			return usernames;
+		}
+		
+		public void addUsernameListbox(JList usernameList, DefaultListModel usernameListModel) {
+			this.usernameList = usernameList;
+			this.usernameListModel = usernameListModel;
+		}
+		
 		private short availableSlot() 
 		{
 			for (short i = 0; i < maximumClients; i++) 
@@ -152,7 +179,7 @@ public class Networking {
 		}
 		
 		// -= Private constants =-
-		private final short maximumClients = 254;
+		private final short maximumClients = 253;
 		
 		// -= Private variables =-
 		private ServerSocket serverSocket;
@@ -161,16 +188,20 @@ public class Networking {
 		private BufferedReader[] inputStream = new BufferedReader[maximumClients];
 		private boolean[] availableSlots = new boolean[maximumClients];
 		private String[] IPList = new String[maximumClients];
+		private String[] usernames = new String[maximumClients];
 		private int portNumber;
 		private int portOffset = 0;
+		
+		private DefaultListModel usernameListModel;
+		private JList usernameList;
 	}
 
 	
 	public static class client extends Thread 
 	{
-		client(String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
+		client(String username, String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
 		{
-			connected = connect(addressToConnectTo, portNumberToConnectTo);
+			connected = connect(username, addressToConnectTo, portNumberToConnectTo);
 		}
 		
 		public void sendMessage(String message) throws IOException 
@@ -207,7 +238,7 @@ public class Networking {
 			{
 				try 
 				{
-					outputStream.println("Disconnected");
+					outputStream.println("DISCONNECT");
 					clientSocket.close();
 					connected = false;	
 				} catch (IOException e) 
@@ -225,7 +256,7 @@ public class Networking {
 			return connected;
 		}
 		
-		private boolean connect(String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
+		private boolean connect(String username, String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
 		{
 			try 
 			{
@@ -235,6 +266,8 @@ public class Networking {
 				// get the input and output streams
 				inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 				outputStream = new PrintWriter(clientSocket.getOutputStream(), true);
+				
+				outputStream.println(username);
 
 				connected = true;
 				
@@ -254,9 +287,16 @@ public class Networking {
 			this.messageTextbox = messageTextbox;
 		}
 		
+		public void setUsernameListModel(JList usernameList, DefaultListModel usernameListModel) 
+		{
+			this.usernameListModel = usernameListModel;
+			this.usernameList = usernameList;
+		}
+		
 		@Override
 		public void run() 
 		{
+			Constants constants = new Constants();
 			String receivedMessage;
 			
 			while (true) 
@@ -266,8 +306,29 @@ public class Networking {
 					sendMessage(" ");
 					receivedMessage = receiveMessage();
 
-					if (receivedMessage.isBlank() == false)
+					if (receivedMessage.isBlank() == false) {
+						if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
+								break;
+						
+						if (receivedMessage.equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
+						{
+							receivedMessage = receiveMessage();
+						
+							usernameListModel.clear();
+							
+							while (receivedMessage.equals(constants.END_USERNAME_CHANGE_INSTRUCTION) == false) 
+							{
+								usernameListModel.addElement(receivedMessage.substring(1));
+								receivedMessage = receiveMessage();
+							}
+							
+							usernameList.setModel(usernameListModel);
+							
+							continue;
+						}
+						
 						messageTextbox.setText(messageTextbox.getText() + receivedMessage + "\n");
+					}
 					
 				Thread.sleep(10);
 				
@@ -276,7 +337,7 @@ public class Networking {
 				{
 					receivedMessageException.printStackTrace();
 				} 
-				catch (InterruptedException threadSleepError) 
+				catch (InterruptedException threadSleepError)
 				{
 					threadSleepError.printStackTrace();
 				}	
@@ -289,6 +350,8 @@ public class Networking {
 		private Socket clientSocket;
 		
 		private JTextPane messageTextbox;
+		private DefaultListModel usernameListModel;
+		JList usernameList;
 		
 		private boolean connected = false;
 	}

@@ -1,0 +1,7 @@
+public class Constants {
+	public final String CONNECT_INSTRUCTION = "CONNECT";
+	public final String DISCONNECT_INSTRUCTION = "DISCONNECT";
+	public final String START_USERNAME_CHANGE_INSTRUCTION = "START_CHANGE_USERNAME_LIST";
+	public final String END_USERNAME_CHANGE_INSTRUCTION = "END_CHANGE_USERNAME_LIST";
+	public final String KICK_INSTRUCTION = "KICK";
+}
