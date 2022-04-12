@@ -42,4 +42,4 @@ Dropped features:
 
 [RysteQ](https://github.com/RysteQ)
 
-[Alex](https://github.com/alexmagd)
+[Alexmagd](https://github.com/alexmagd)
