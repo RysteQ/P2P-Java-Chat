@@ -237,6 +237,12 @@ public class GUI implements ActionListener {
 		voiceMessageButton.setIcon(micIconDark);
 		voiceMessageButton.setFocusPainted(false);
 		uploadFileButton.setFocusPainted(false);
+		
+		voiceMessageButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		uploadFileButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		playButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		connectButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		hostButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	}
 
 	// Initialize TextBoxes
