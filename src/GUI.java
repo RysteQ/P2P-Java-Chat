@@ -52,8 +52,8 @@ public class GUI implements ActionListener {
 		mainForm.setLocationRelativeTo(null);
 		mainForm.setResizable(false);
 		
-		mainForm.getContentPane().setBackground(Color.LIGHT_GRAY);
-		mainForm.setBackground(Color.LIGHT_GRAY);
+		mainForm.getContentPane().setBackground(lightBG);
+		mainForm.setBackground(lightBG);
 
 		ImageIcon P2Picon = new ImageIcon(this.getClass().getResource("/P2P.png"));
 		mainForm.setIconImage(P2Picon.getImage());
@@ -63,17 +63,17 @@ public class GUI implements ActionListener {
 	// Initialize all JPanels
 	private void initJPanels() 
 	{
-		textFieldPanel.setBackground(Color.LIGHT_GRAY);
-		IPpanel.setBackground(Color.LIGHT_GRAY);
-		convPanel.setBackground(Color.LIGHT_GRAY);
-		controlsPanel.setBackground(Color.LIGHT_GRAY);
+		textFieldPanel.setBackground(lightBG);
+		IPpanel.setBackground(lightBG);
+		convPanel.setBackground(lightBG);
+		controlsPanel.setBackground(lightBG);
 		
 		IPpanel.setForeground(Color.BLACK);
 		
 		textFieldPanel.setBounds(125, 365, 440, 85);
 		IPpanel.setBounds(0, 0, 125, 450);
 		convPanel.setBounds(125, 0, 435, 360);
-		controlsPanel.setBounds(570, 10, controlPanelWidth, 500);
+		controlsPanel.setBounds(570, 10, 160, 440);
 		
 		textFieldPanel.setLayout(null);
 		IPpanel.setLayout(null);
@@ -108,7 +108,7 @@ public class GUI implements ActionListener {
 		writeMessagePane.setForeground(Color.GRAY);
 		messagePane.setEditable(false);
 
-		writeMessagePane.setText("Write Something");
+		writeMessagePane.setText(" Write Something");
 
 		// Change the text based on the writeMessagePane TextBox usage
 		writeMessagePane.addFocusListener(new FocusListener() 
@@ -116,10 +116,10 @@ public class GUI implements ActionListener {
 	        @Override
 	        public void focusGained(FocusEvent e) 
 	        {
-	        	if (writeMessagePane.getText().equals("Write Something")) 
+	        	if (writeMessagePane.getText().equals(" Write Something")) 
 	        	{
-	        		writeMessagePane.setText("");
 	        		writeMessagePane.setForeground(Color.BLACK);
+	        		writeMessagePane.setText("");
 	        	}
 	        }
 
@@ -128,8 +128,8 @@ public class GUI implements ActionListener {
 			{
 				if (writeMessagePane.getText().equals("")) 
 				{
-					writeMessagePane.setForeground(Color.GRAY);
-					writeMessagePane.setText("Write Something");
+					writeMessagePane.setText(" Write Something");
+					writeMessagePane.setForeground(lightTextColor);
 				}
 			}
 	    });
@@ -152,7 +152,7 @@ public class GUI implements ActionListener {
 						
 						hostConnection.broadcastMessage(sendMessage);
 						messagePane.setText(messagePane.getText() + sendMessage + "\n");
-						writeMessagePane.setText(null);
+						writeMessagePane.setText("");
 					} else if (hostOrClient.equals("CLIENT")) 
 					{
 						if (clientConnection.isConnected())
@@ -165,7 +165,7 @@ public class GUI implements ActionListener {
 									sendMessage = usernameTextField.getText() + " - " + writeMessagePane.getText().trim();
 								
 								clientConnection.sendMessage(sendMessage);
-								writeMessagePane.setText(null);
+								writeMessagePane.setText("");
 							} catch (IOException sendMessageException) 
 							{
 								sendMessageException.printStackTrace();
@@ -175,6 +175,7 @@ public class GUI implements ActionListener {
 					{
 						JOptionPane.showMessageDialog(null, "You are not connected / hosting to anyone", "Error", JOptionPane.ERROR_MESSAGE);
 					}
+					
 				}
 			}
 
@@ -191,8 +192,8 @@ public class GUI implements ActionListener {
 	{
 		IPList.setFont(new Font("Arial", Font.PLAIN, 12));
 		IPList.setSelectedIndex(-1);
-
 		IPList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		IPList.setBackground(Color.WHITE);
 		IPscrollPane.setViewportView(IPList);
 
 		IPList.setModel(listModel);
@@ -205,15 +206,19 @@ public class GUI implements ActionListener {
 		uploadFileButton.setBounds(85, 400, 75, 40);
 		playButton.setBounds(0, 355, controlPanelWidth, 40);
 		connectButton.setBounds(0, 75, controlPanelWidth, 30);
-		hostButton.setBounds(0, 110, controlPanelWidth, 30);
+		hostButton.setBounds(0, 110, 160, 30);
+		
+		voiceMessageButton.setBackground(Color.WHITE);
+		uploadFileButton.setBackground(Color.WHITE);
+		playButton.setBackground(Color.WHITE);
+		connectButton.setBackground(Color.WHITE);
+		hostButton.setBackground(Color.WHITE);
 
 		voiceMessageButton.setFont(new Font("Tahoma", Font.PLAIN, 25));
-		uploadFileButton.setFont(new Font("Arial", Font.BOLD, 12));
+		uploadFileButton.setFont(new Font("Arial", Font.BOLD, 20));
 		playButton.setFont(new Font("Arial", Font.BOLD, 25));
 		connectButton.setFont(new Font("Arial", Font.BOLD, 25));
 		hostButton.setFont(new Font("Arial", Font.BOLD, 25));
-
-		ImageIcon micIcon = new ImageIcon(this.getClass().getResource("/microphone.png"));
 
 		controlsPanel.add(voiceMessageButton);
 		controlsPanel.add(uploadFileButton);
@@ -229,7 +234,7 @@ public class GUI implements ActionListener {
 
 		playButton.addActionListener(this);
 		connectButton.setFocusPainted(false);
-		voiceMessageButton.setIcon(micIcon);
+		voiceMessageButton.setIcon(micIconDark);
 		voiceMessageButton.setFocusPainted(false);
 		uploadFileButton.setFocusPainted(false);
 	}
@@ -262,6 +267,11 @@ public class GUI implements ActionListener {
 		portTextField.setBounds(120, 35, 40, 30);
 		controlsPanel.add(portTextField);
 		portTextField.setColumns(0);
+		
+		
+		usernameTextField.setBackground(Color.WHITE);
+		IPTextField.setBackground(Color.WHITE);
+		portTextField.setBackground(Color.WHITE);
 		
 		// Change the text based on the use of the TextBox
 		usernameTextField.addFocusListener(new FocusListener() 
@@ -356,8 +366,8 @@ public class GUI implements ActionListener {
 		IPlabel.setBounds(10, 11, 105, 19);
 		portLabel.setBounds(0, 260, 85, 20);
 		
-		ImageIcon IPicon = new ImageIcon(this.getClass().getResource("/ip-address.png"));
-		IPlabel.setIcon(IPicon);
+		
+		IPlabel.setIcon(IPiconDark);
 		
 		IPpanel.add(IPlabel);
 		controlsPanel.add(portLabel);
@@ -366,10 +376,9 @@ public class GUI implements ActionListener {
 	// Initialize RadioButtons
 	private void initRadioButons() 
 	{
-		enableEncryption.setHorizontalAlignment(SwingConstants.CENTER);
 		enableEncryption.setFont(new Font("Arial", Font.PLAIN, 18));
-		enableEncryption.setBackground(Color.LIGHT_GRAY);
-		enableEncryption.setBounds(15, 190, 125, 23);
+		enableEncryption.setBackground(lightBG);
+		enableEncryption.setBounds(0, 190, 140, 23);
 		enableEncryption.setFocusPainted(false);
 		enableEncryption.setSelected(true);
 		controlsPanel.add(enableEncryption);
@@ -380,8 +389,10 @@ public class GUI implements ActionListener {
 	{
 		Theme.setModel(new DefaultComboBoxModel(new String[] {"Light Theme", "Dark Theme"}));
 		Theme.setFont(new Font("Arial", Font.PLAIN, 18));
-		Theme.setBounds(0, 145, controlPanelWidth, 40);
+		Theme.setBounds(0, 150, 160, 25);
 		Theme.setSelectedIndex(0);
+		Theme.setBackground(Color.WHITE);
+		Theme.addActionListener(this);
 		controlsPanel.add(Theme);
 	}
 
@@ -482,6 +493,112 @@ public class GUI implements ActionListener {
 			
 			JOptionPane.showMessageDialog(null, "Now listening at port " + port, "Information", JOptionPane.INFORMATION_MESSAGE);
 		}
+		
+		if(e.getSource() == Theme) {
+			if(Theme.getSelectedIndex() == 0) {
+				System.out.println("CHANGE BACKGROUND TO LIGHT");
+				changeBackground(lightBG);
+			}
+			if(Theme.getSelectedIndex() == 1){
+				System.out.println("CHANGE BACKGROUND TO DARK");
+				changeBackground(darkerBG);
+			}
+		}
+	}
+	
+	public void changeBackground(Color color) {
+		background = color;
+		
+		mainForm.getContentPane().setBackground(background);
+		textFieldPanel.setBackground(background);
+		IPpanel.setBackground(background);
+		convPanel.setBackground(background);
+		enableEncryption.setBackground(background);
+		controlsPanel.setBackground(background);
+		
+		Theme.setBackground(background);
+		
+		if(background.equals(darkerBG)) {
+			IPlabel.setForeground(lightTextColor);
+			enableEncryption.setForeground(lightTextColor);
+			voiceMessageButton.setForeground(lightTextColor);
+			uploadFileButton.setForeground(lightTextColor);
+			playButton.setForeground(lightTextColor);
+			connectButton.setForeground(lightTextColor);
+			hostButton.setForeground(lightTextColor);
+			
+			IPList.setForeground(lightTextColor);
+			IPList.setBackground(darkBG);
+			
+			voiceMessageButton.setBackground(darkBG);
+			uploadFileButton.setBackground(darkBG);
+			playButton.setBackground(darkBG);
+			connectButton.setBackground(darkBG);
+			hostButton.setBackground(darkBG);
+			
+			Theme.setBackground(darkBG);
+			Theme.setForeground(lightTextColor);
+			
+			usernameTextField.setBackground(darkBG);
+			IPTextField.setBackground(darkBG);
+			portTextField.setBackground(darkBG);
+			
+			messagePane.setBackground(darkBG);
+			messagePane.setForeground(lightTextColor);
+			writeMessagePane.setBackground(darkBG);
+			if (writeMessagePane.getText().equals(" Write Something")) 
+			{
+				writeMessagePane.setForeground(Color.GRAY);	
+			}
+			else {
+				writeMessagePane.setForeground(lightTextColor);
+			}
+			
+			
+			
+			voiceMessageButton.setIcon(micIconLight);
+			IPlabel.setIcon(IPiconLight);
+		}
+		else {
+			IPlabel.setForeground(Color.BLACK);
+			enableEncryption.setForeground(Color.BLACK);
+			voiceMessageButton.setForeground(Color.BLACK);
+			uploadFileButton.setForeground(Color.BLACK);
+			playButton.setForeground(Color.BLACK);
+			connectButton.setForeground(Color.BLACK);
+			hostButton.setForeground(Color.BLACK);
+			IPList.setForeground(Color.BLACK);
+			IPList.setBackground(Color.WHITE);
+			voiceMessageButton.setBackground(Color.WHITE);
+			uploadFileButton.setBackground(Color.WHITE);
+			playButton.setBackground(Color.WHITE);
+			connectButton.setBackground(Color.WHITE);
+			hostButton.setBackground(Color.WHITE);
+			Theme.setBackground(Color.WHITE);
+			Theme.setForeground(Color.BLACK);
+			usernameTextField.setBackground(Color.WHITE);
+			IPTextField.setBackground(Color.WHITE);
+			portTextField.setBackground(Color.WHITE);
+			
+			messagePane.setBackground(Color.WHITE);
+			messagePane.setForeground(Color.BLACK);
+			writeMessagePane.setBackground(Color.WHITE);
+			if (writeMessagePane.getText().equals(" Write Something")) 
+			{
+				writeMessagePane.setForeground(Color.GRAY);	
+			}
+			else {
+				writeMessagePane.setForeground(Color.BLACK);
+			}
+			
+			
+			
+			
+			
+			voiceMessageButton.setIcon(micIconDark);
+			IPlabel.setIcon(IPiconDark);
+		}
+		
 	}
 	
 	public static void appendToPane(JTextPane pane, String txt) 
@@ -502,7 +619,7 @@ public class GUI implements ActionListener {
 	private JFrame mainForm = new JFrame();
 	
 	private JButton voiceMessageButton = new JButton("");
-	private JButton uploadFileButton = new JButton("Upload file");
+	private JButton uploadFileButton = new JButton("File");
 	private JButton playButton = new JButton("Play");
 	private JButton connectButton = new JButton("Connect");
 	private JButton hostButton = new JButton("Host");
@@ -527,7 +644,7 @@ public class GUI implements ActionListener {
 	private JList IPList = new JList(IPListModel);
 	
 	private JComboBox Theme = new JComboBox();
-	private JRadioButton enableEncryption = new JRadioButton("Encryption");
+	private JRadioButton enableEncryption = new JRadioButton(" Encryption");
 	
 	private JLabel IPlabel = new JLabel("IP List");
 	private JLabel portLabel = new JLabel("");
@@ -537,6 +654,17 @@ public class GUI implements ActionListener {
 	private ArrayList<String> names = new ArrayList<>();
 	
 	private DefaultListModel listModel = new DefaultListModel();
+	
+	private Color lightBG = new Color(0xDDDDDD);
+	private Color lightTextColor = new Color(0xbebebe);
+	private Color darkerBG = new Color(0x252526);
+	private Color darkBG = new Color(0x3e3e42);
+	private Color background = lightBG;
+	
+	private ImageIcon micIconDark = new ImageIcon(this.getClass().getResource("/microphone-dark.png"));
+	private ImageIcon micIconLight = new ImageIcon(this.getClass().getResource("/microphone-light.png"));
+	private ImageIcon IPiconDark = new ImageIcon(this.getClass().getResource("/ip-address-dark.png"));
+	private ImageIcon IPiconLight = new ImageIcon(this.getClass().getResource("/ip-address-light.png"));;
 	
 	// -= Private variables =-
 	private Networking.client clientConnection;
