@@ -569,6 +569,8 @@ public class GUI implements ActionListener {
 			
 			connectButton.enable(false);
 			usernameTextField.enable(false);
+			IPTextField.enable(false);
+			portTextField.enable(false);
 			
 			new Thread(new Runnable() 
 			{
@@ -720,15 +722,14 @@ public class GUI implements ActionListener {
 			messagePane.setBackground(darkBG);
 			messagePane.setForeground(lightTextColor);
 			writeMessagePane.setBackground(darkBG);
+			
 			if (writeMessagePane.getText().equals(" Write Something")) 
 			{
 				writeMessagePane.setForeground(Color.GRAY);	
-			}
-			else {
+			} else {
 				writeMessagePane.setForeground(lightTextColor);
 			}
-		}
-		else {
+		} else {
 			IPlabel.setForeground(Color.BLACK);
 			enableEncryption.setForeground(Color.BLACK);
 			
@@ -761,8 +762,7 @@ public class GUI implements ActionListener {
 			if (writeMessagePane.getText().equals(" Write Something")) 
 			{
 				writeMessagePane.setForeground(Color.GRAY);	
-			}
-			else {
+			} else {
 				writeMessagePane.setForeground(Color.BLACK);
 			}
 		}
@@ -772,7 +772,7 @@ public class GUI implements ActionListener {
 	private JFrame mainForm = new JFrame();
 	
 	private JButton voiceMessageButton = new JButton("");
-	private JButton uploadFileButton = new JButton("Upload file");
+	private JButton uploadFileButton = new JButton("Upload");
 	private JButton playButton = new JButton("Play");
 	private JButton connectButton = new JButton("Connect");
 	private JButton hostButton = new JButton("Host");

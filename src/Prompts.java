@@ -28,7 +28,6 @@ public class Prompts {
 		if (result == JOptionPane.YES_OPTION)
 			return true;
 		
-		System.out.println("Why ?");
 		return false;
 	}
 }
