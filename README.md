@@ -26,7 +26,7 @@ This section will contain a list of the current features of the application, the
 Current features:
 - [x] A GUI
 - [ ] Encryption
-- [ ] File sharing
+- [x] File sharing
 - [x] Team groups
 - [ ] A simple game
 - [ ] Voice Chat
