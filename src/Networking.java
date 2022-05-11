@@ -1,6 +1,11 @@
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,56 +14,41 @@ import javax.swing.*;
 
 public class Networking {
 	public static class host extends Thread {
-		host (int portNumber) {
+		host (int portNumber) 
+		{
 			this.portNumber = portNumber;
 			initAvailableSlots();
 		}
 		
 		public void bind() throws InterruptedException 
 		{
-			Constants constants = new Constants();
 			short availableSlot;
 			
-			while (true)
+			try 
 			{
-				try 
+				availableSlot = availableSlot();
+				
+				if (availableSlot != -1) 
 				{
-					availableSlot = availableSlot();
+					// save the user socket
+					serverSocket = new ServerSocket(portNumber + portOffset);
+					clientSocket[availableSlot] = serverSocket.accept();
 					
-					// save the user input / output stream and username
-					if (availableSlot != -1) 
-					{
-						serverSocket = new ServerSocket(portNumber + portOffset);
-						clientSocket[availableSlot] = serverSocket.accept();
-
-						inputStream[availableSlot] = new BufferedReader(new InputStreamReader(clientSocket[availableSlot].getInputStream()));
-						outputStream[availableSlot] = new PrintWriter(clientSocket[availableSlot].getOutputStream(), true);
-						usernames[availableSlot] = inputStream[availableSlot].readLine();
+					// get the input / output stream
+					inputStream[availableSlot] = new BufferedReader(new InputStreamReader(clientSocket[availableSlot].getInputStream()));
+					outputStream[availableSlot] = new PrintWriter(clientSocket[availableSlot].getOutputStream(), true);
+					usernames[availableSlot] = inputStream[availableSlot].readLine();
 						
-						changeAvailableSlotStatus(availableSlot, false, clientSocket[availableSlot]);
-						
-						portOffset++;
-						
-						// broadcast the username list change to all users
-						broadcastMessage(constants.START_USERNAME_CHANGE_INSTRUCTION);
-						
-						usernameListModel.clear();
-						
-						for (int i = 0; i < maximumClients; i++) {
-							if (availableSlots[i] == false) {
-								usernameListModel.addElement(usernames[i]);
-								broadcastMessage("@" + usernames[i]);	
-							}
-						}
-						
-						usernameList.setModel(usernameListModel);
-						
-						broadcastMessage(constants.END_USERNAME_CHANGE_INSTRUCTION);
-					}
-				} catch (IOException e) 
-				{
-					System.out.println("Error listening to incoming requests\n" + e);
+					portOffset++;
+					
+					// do other miscelenious actions
+					changeAvailableSlotStatus(availableSlot, false, clientSocket[availableSlot]);						
+					broadcastUsernames();
+					updateGUIUsernames();
 				}
+			} catch (IOException e) 
+			{
+				System.out.println("Error listening to incoming requests\n" + e);
 			}
 		}
 
@@ -69,6 +59,19 @@ public class Networking {
 					outputStream[i].println(message);
 		}
 		
+		public void individualMessage(String username, String message) throws IOException 
+		{
+			int index = 0;
+			
+			while (usernames[index].equals(username) == false && index != maximumClients)
+				index++;
+			
+			if (index != maximumClients)
+				outputStream[index].println(message);
+			else
+				throw new IOException("User not found");
+		}
+		
 		public int getPortOffset() 
 		{
 			return portOffset;
@@ -77,14 +80,15 @@ public class Networking {
 		public String receiveMessages() 
 		{
 			String receivedMessage;
+			int index = 0;
 			
 			try 
 			{
-				for (int i = 0; i < maximumClients; i++) 
+				for (index = 0; index < maximumClients; index++) 
 				{
-					if (availableSlots[i] == false) 
+					if (availableSlots[index] == false) 
 					{
-						receivedMessage = inputStream[i].readLine();
+						receivedMessage = inputStream[index].readLine();
 							
 						if (receivedMessage.isBlank() == false)
 							return receivedMessage;	
@@ -92,10 +96,78 @@ public class Networking {
 				}
 			} catch (IOException e) 
 			{
-				System.out.println("Error receiveing message\n" + e);
+				changeAvailableSlotStatus(index, false, clientSocket[index]);
 			}
 
 			return null;
+		}
+		
+		public void sendFile(String fileLocation, String clientUsername, int port) throws IOException 
+		{
+			for (int clientIndex = 0; clientIndex < usernames.length; clientIndex++) 
+			{
+				if (usernames[clientIndex].equals(clientUsername)) 
+				{
+					// Create a new socket because for some reason I cannot use the existing one
+					Socket fileSocket = new Socket(clientSocket[clientIndex].getInetAddress(), port);
+					
+					// create the input / output streams
+			        InputStream file = new FileInputStream(new File(fileLocation));
+			        OutputStream outputStream = fileSocket.getOutputStream();
+			        
+			        // create a buffer and a counter
+			        byte[] buffer = new byte[4096];
+			        int bytes;
+			        
+			        // send the file over the socket
+			        while ((bytes = file.read(buffer)) > 0)
+			        	outputStream.write(buffer, 0, bytes);
+			        
+			        // close all of the streams
+			        outputStream.close();
+			        file.close();
+			        fileSocket.close();
+					
+					return;
+				}	
+			}
+	        
+	        throw new IOException("User not found");
+		}
+
+		public void receiveFile(String saveLocation, String clientUsername, int port) throws IOException 
+		{
+			for (int clientIndex = 0; clientIndex < usernames.length; clientIndex++) 
+			{
+				if (usernames[clientIndex].equals(clientUsername)) 
+				{
+					ServerSocket fileTransferSocket = new ServerSocket(port);
+					Socket fileTransferClient = fileTransferSocket.accept();
+					
+					File transferedFile = new File(saveLocation);
+					
+					if (transferedFile.exists() == false)
+						transferedFile.createNewFile();
+					
+			        InputStream input = fileTransferClient.getInputStream();;
+			        OutputStream fileOutput = new FileOutputStream(saveLocation);
+
+			        byte[] buffer = new byte[4096];
+			        int bytes;
+			        
+			        while ((bytes = input.read(buffer)) > 0)
+			        	fileOutput.write(buffer, 0, bytes);
+
+			        fileOutput.close();
+			        input.close();
+			        fileTransferSocket.close();
+			        fileTransferClient.close();
+					
+					return;
+				}
+			}
+			
+			throw new IOException("User not found");
 		}
 
 		public void kickClient(int index) 
@@ -112,10 +184,13 @@ public class Networking {
 
 		public void close(int index) 
 		{
-			try {
+			try 
+			{
+				Constants constants = new Constants();
+				
 				for (int i = 0; i < maximumClients; i++) 
 				{
-					outputStream[i].println("CLOSING");
+					outputStream[i].println(constants.CLOSING_HOST);
 					clientSocket[i].close();
 				}
 				
@@ -126,26 +201,44 @@ public class Networking {
 			}
 		}
 		
-		public String[] getIPList() {
-			return IPList;
-		}
-
-		public String[] getUsernameList() {
-			return usernames;
-		}
-		
-		public void addUsernameListbox(JList usernameList, DefaultListModel usernameListModel) {
+		public void setUsernameListModel(JList usernameList, DefaultListModel usernameListModel) 
+		{
 			this.usernameList = usernameList;
 			this.usernameListModel = usernameListModel;
+		}
+		
+		// THIS WILL BE REMOVED
+		private void broadcastUsernames() 
+		{
+			Constants constants = new Constants();
+			
+			// broadcast the username list change to all users
+			broadcastMessage(constants.START_USERNAME_CHANGE_INSTRUCTION);
+			
+			for (int i = 0; i < maximumClients; i++)
+				if (availableSlots[i] == false)
+					broadcastMessage("@" + usernames[i]);
+			
+			// broadcast the end of the username list change to all users
+			broadcastMessage(constants.END_USERNAME_CHANGE_INSTRUCTION);
+		}
+		
+		private void updateGUIUsernames() 
+		{
+			usernameListModel.clear();
+			
+			for (int i = 0; i < maximumClients; i++)
+				if (availableSlots[i] == false)
+					usernameListModel.addElement(usernames[i]);
+			
+			usernameList.setModel(usernameListModel);
 		}
 		
 		private short availableSlot() 
 		{
 			for (short i = 0; i < maximumClients; i++) 
-			{
 				if (availableSlots[i] == true)
 					return i;
-			}
 			
 			return -1;
 		}
@@ -164,18 +257,6 @@ public class Networking {
 		{
 			for (int i = 0; i < maximumClients; i++)
 				availableSlots[i] = true;
-		}
-		
-		@Override
-		public void run() 
-		{
-			try 
-			{
-				bind();
-			} catch (InterruptedException bindException) 
-			{
-				bindException.printStackTrace();
-			}
 		}
 		
 		// -= Private constants =-
@@ -197,7 +278,7 @@ public class Networking {
 	}
 
 	
-	public static class client extends Thread 
+	public static class client
 	{
 		client(String username, String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
 		{
@@ -206,30 +287,81 @@ public class Networking {
 		
 		public void sendMessage(String message) throws IOException 
 		{
-			if (connected)
+			if (connected) 
 			{
-				outputStream.println(message);	
+				outputStream.println(message);
+				return;
+			}	
+			
+			throw new IOException("There is not an active connection");
+		}
+		
+		public void sendInstruction(String instruction, String[] parameters) throws IOException 
+		{
+			if (connected) 
+			{
+				String completeInstruction = instruction;
+				
+				for (int i = 0; i < parameters.length; i++)
+					completeInstruction += instructionparameterSeperator + parameters[i];
+				
+				outputStream.println(completeInstruction);
 			} else 
 			{
-				throw new IOException("There is not an active connection");
+				throw new IOException("There is not an active connection");	
 			}
 		}
 		
-		public String receiveMessage() throws IOException {
-			if (connected) 
-			{
-				try 
-				{
-					return inputStream.readLine();	
-				} catch (IOException e) 
-				{
-					System.out.println("Error receiveing message\n" + e);
-					return null;
-				}	
-			} else 
-			{
-				throw new IOException("There is not an active connection");
-			}
+		public String receiveMessage() throws IOException 
+		{
+			if (connected)
+				return inputStream.readLine();
+
+			throw new IOException("There is not an active connection");
+		}
+
+		public void receiveFile(String saveLocation, int port) throws IOException 
+		{
+			ServerSocket fileTransferSocket = new ServerSocket(port);
+			Socket fileTransferClient = fileTransferSocket.accept();
+			
+			File transferedFile = new File(saveLocation);
+			
+			if (transferedFile.exists() == false)
+				transferedFile.createNewFile();
+			
+	        InputStream input = fileTransferClient.getInputStream();;
+	        OutputStream fileOutput = new FileOutputStream(saveLocation);
+
+	        byte[] buffer = new byte[4096];
+	        int bytes;
+	        
+	        while ((bytes = input.read(buffer)) > 0)
+	        	fileOutput.write(buffer, 0, bytes);
+
+	        fileOutput.close();
+	        input.close();
+	        fileTransferSocket.close();
+	        fileTransferClient.close();
+		}
+		
+		public void sendFile(String fileLocation, String address, int port) throws IOException 
+		{
+			Socket fileSocket = new Socket(address, port);
+			
+	        InputStream file = new FileInputStream(new File(fileLocation));
+	        OutputStream outputStream = fileSocket.getOutputStream();
+	        
+	        byte[] buffer = new byte[4096];
+	        int bytes;
+	        
+	        while ((bytes = file.read(buffer)) > 0) {
+	        	outputStream.write(buffer, 0, bytes);
+	        }
+
+	        outputStream.close();
+	        file.close();
+	        fileSocket.close();
 		}
 		
 		public void leave() throws IOException 
@@ -238,17 +370,19 @@ public class Networking {
 			{
 				try 
 				{
-					outputStream.println("DISCONNECT");
+					Constants constants = new Constants();
+					
+					outputStream.println(constants.DISCONNECT_INSTRUCTION);
 					clientSocket.close();
 					connected = false;	
-				} catch (IOException e) 
+				} 
+				catch (IOException e) 
 				{
 					System.out.println("Error closing connectiong\n" + e);
 				}	
-			} else 
-			{
-				throw new IOException("There is not an active connection");
 			}
+			
+			throw new IOException("There is not an active connection");
 		}
 		
 		public boolean isConnected() 
@@ -273,10 +407,8 @@ public class Networking {
 				
 				return true;
 			} catch (IOException e) 
-			{
-				// if there is an error while connecting to the specified host, display this message
-				System.out.println("Error connecting to " + addressToConnectTo + ":" + portNumberToConnectTo);
-				System.out.println(e);
+			{ 
+				e.printStackTrace();
 			}
 			
 			return false;
@@ -292,58 +424,6 @@ public class Networking {
 			this.usernameListModel = usernameListModel;
 			this.usernameList = usernameList;
 		}
-		
-		@Override
-		public void run() 
-		{
-			Constants constants = new Constants();
-			String receivedMessage;
-			
-			while (true) 
-			{
-				try 
-				{
-					sendMessage(" ");
-					receivedMessage = receiveMessage();
-
-					if (receivedMessage.isBlank() == false) {
-						if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
-								break;
-						
-						if (receivedMessage.equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
-						{
-							receivedMessage = receiveMessage();
-						
-							usernameListModel.clear();
-							
-							while (receivedMessage.equals(constants.END_USERNAME_CHANGE_INSTRUCTION) == false) 
-							{
-								usernameListModel.addElement(receivedMessage.substring(1));
-								receivedMessage = receiveMessage();
-							}
-							
-							usernameList.setModel(usernameListModel);
-							
-							continue;
-						}
-						
-						messageTextbox.setText(messageTextbox.getText() + receivedMessage + "\n");
-					}
-					
-				Thread.sleep(10);
-				
-				} 
-				catch (IOException receivedMessageException) 
-				{
-					receivedMessageException.printStackTrace();
-				} 
-				catch (InterruptedException threadSleepError)
-				{
-					threadSleepError.printStackTrace();
-				}	
-			}
-		}
-		
 
 		private BufferedReader inputStream;
 		private PrintWriter outputStream;
@@ -354,5 +434,6 @@ public class Networking {
 		JList usernameList;
 		
 		private boolean connected = false;
+		private final char instructionparameterSeperator = '@';
 	}
 }
