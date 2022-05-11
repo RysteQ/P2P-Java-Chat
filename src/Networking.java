@@ -178,7 +178,7 @@ public class Networking {
 				clientSocket[index].close();
 			} catch (IOException e) 
 			{
-				System.out.println("Error closing sockets\n" + e);
+				e.printStackTrace();
 			}
 		}
 
@@ -197,11 +197,11 @@ public class Networking {
 				serverSocket.close();
 			} catch (IOException e) 
 			{
-				System.out.println("Error closing sockets\n" + e);
+				e.printStackTrace();
 			}
 		}
 		
-		public void setUsernameListModel(JList usernameList, DefaultListModel usernameListModel) 
+		public void setUsernameListModel(JList<String> usernameList, DefaultListModel<String> usernameListModel) 
 		{
 			this.usernameList = usernameList;
 			this.usernameListModel = usernameListModel;
@@ -273,16 +273,38 @@ public class Networking {
 		private int portNumber;
 		private int portOffset = 0;
 		
-		private DefaultListModel usernameListModel;
-		private JList usernameList;
+		private DefaultListModel<String> usernameListModel;
+		private JList<String> usernameList;
 	}
 
 	
 	public static class client
 	{
-		client(String username, String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
+		client(String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
 		{
-			connected = connect(username, addressToConnectTo, portNumberToConnectTo);
+			connected = connect(addressToConnectTo, portNumberToConnectTo);
+		}
+		
+		private boolean connect(String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
+		{
+			try 
+			{
+				// connect to the specified host
+				clientSocket = new Socket(addressToConnectTo, portNumberToConnectTo);
+				
+				// get the input and output streams
+				inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+				outputStream = new PrintWriter(clientSocket.getOutputStream(), true);
+
+				connected = true;
+				
+				return true;
+			} catch (IOException e) 
+			{ 
+				e.printStackTrace();
+			}
+			
+			return false;
 		}
 		
 		public void sendMessage(String message) throws IOException 
@@ -390,38 +412,8 @@ public class Networking {
 			return connected;
 		}
 		
-		private boolean connect(String username, String addressToConnectTo, int portNumberToConnectTo) throws InterruptedException 
+		public void setUsernameListModel(JList<String> usernameList)
 		{
-			try 
-			{
-				// connect to the specified host
-				clientSocket = new Socket(addressToConnectTo, portNumberToConnectTo);
-				
-				// get the input and output streams
-				inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-				outputStream = new PrintWriter(clientSocket.getOutputStream(), true);
-				
-				outputStream.println(username);
-
-				connected = true;
-				
-				return true;
-			} catch (IOException e) 
-			{ 
-				e.printStackTrace();
-			}
-			
-			return false;
-		}
-		
-		public void setMessageTextbox(JTextPane messageTextbox) 
-		{
-			this.messageTextbox = messageTextbox;
-		}
-		
-		public void setUsernameListModel(JList usernameList, DefaultListModel usernameListModel) 
-		{
-			this.usernameListModel = usernameListModel;
 			this.usernameList = usernameList;
 		}
 
@@ -429,9 +421,7 @@ public class Networking {
 		private PrintWriter outputStream;
 		private Socket clientSocket;
 		
-		private JTextPane messageTextbox;
-		private DefaultListModel usernameListModel;
-		JList usernameList;
+		JList<String> usernameList;
 		
 		private boolean connected = false;
 		private final char instructionparameterSeperator = '@';

@@ -4,9 +4,6 @@
 */
 
 
-// THIS WILL BE REWORKED UPON
-
-
 public class Miscelenious {
 	public static boolean validIP(String IPToTest) 
 	{
@@ -25,11 +22,6 @@ public class Miscelenious {
 		}
 		
 		return true;
-	}
-	
-	public static int convertStringToInt(String toConvert) 
-	{
-		return Integer.parseInt(toConvert);
 	}
 	
 	public static boolean validPort(int portNumber) 

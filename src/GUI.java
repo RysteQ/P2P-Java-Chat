@@ -227,7 +227,7 @@ public class GUI implements ActionListener {
 	// Initialize ComboBoxes
 	private void initComboBoxes() 
 	{
-		Theme.setModel(new DefaultComboBoxModel(new String[] {"Light Theme", "Dark Theme"}));
+		Theme.setModel(new DefaultComboBoxModel<String>(new String[] {"Light Theme", "Dark Theme"}));
 		Theme.setFont(new Font("Arial", Font.PLAIN, 18));
 		Theme.setBounds(0, 145, controlPanelWidth, 40);
 		Theme.setSelectedIndex(0);
@@ -251,8 +251,13 @@ public class GUI implements ActionListener {
 					try 
 					{
 						String fileLocation = prompt.selectFile("Select");
+						String[] instructionParameters = {
+								IPList.getSelectedValue().toString(),
+								usernameTextField.getText(),
+								fileLocation
+						};
 						
-						clientConnection.sendMessage(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION + "@" + IPList.getSelectedValue().toString() + "@" + usernameTextField.getText() + "@" + fileLocation);
+						clientConnection.sendInstruction(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION, instructionParameters);
 						
 						// I have no clue on why I have to wait but if I don't it will throw a bullshit error
 						try { Thread.sleep(1000); } catch (Exception e1) { }
@@ -436,19 +441,24 @@ public class GUI implements ActionListener {
 		{
 			if (usernameTextField.getText().length() != 0 && usernameTextField.getText().equals("Enter username") == false) 
 			{
-				if (Miscelenious.validIP(IPTextField.getText()) && Miscelenious.validPort(Miscelenious.convertStringToInt(portTextField.getText())))
+				if (Miscelenious.validIP(IPTextField.getText()) && Miscelenious.validPort(Integer.parseInt(portTextField.getText())))
 				{
 					try 
 					{
-						clientConnection = new Networking.client(usernameTextField.getText(), IPTextField.getText(), Miscelenious.convertStringToInt(portTextField.getText()));
-								
+						clientConnection = new Networking.client(IPTextField.getText(), Integer.parseInt(portTextField.getText()));
+						
 						if (clientConnection.isConnected()) 
 						{
+							try { 
+								clientConnection.sendMessage(usernameTextField.getText());
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+							
 							hostButton.enable(false);
 							usernameTextField.enable(false);
 									
-							clientConnection.setMessageTextbox(messagePane);
-							clientConnection.setUsernameListModel(IPList, IPListModel);
+							clientConnection.setUsernameListModel(IPList);
 									
 							JOptionPane.showMessageDialog(null, "Connected to " + IPTextField.getText(), "Information", JOptionPane.INFORMATION_MESSAGE);	
 							
@@ -626,6 +636,8 @@ public class GUI implements ActionListener {
 									
 									File toDelete = new File(saveLocation);
 									toDelete.delete();
+									
+									sendFile = false;
 								} catch (IOException e) 
 								{
 									e.printStackTrace();
@@ -633,13 +645,12 @@ public class GUI implements ActionListener {
 							} 
 							else if (receivedMessage.split("[@]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_DECLINED_INSTRUCTION)) 
 							{
-								try 
-								{
-									hostConnection.individualMessage(receivedMessage.split("[@]")[1], receivedMessage.split("[@]")[0] + "@" + receivedMessage.split("[@]")[2]);
-								} catch (IOException e) 
-								{
-									e.printStackTrace();
-								}
+								String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + filename;
+								
+								File toDelete = new File(saveLocation);
+								toDelete.delete();
+								
+								sendFile = false;
 							}
 							else 
 							{
@@ -648,14 +659,7 @@ public class GUI implements ActionListener {
 							}
 						}
 						
-						try 
-						{
-							Thread.sleep(100);
-						} 
-						catch (InterruptedException threadSleepError) 
-						{
-							threadSleepError.printStackTrace();
-						}
+						try { Thread.sleep(100); } catch (InterruptedException threadSleepError) { threadSleepError.printStackTrace(); }
 					}
 				}
 			}).start();;
@@ -690,6 +694,7 @@ public class GUI implements ActionListener {
 		if(background.equals(darkerBG)) {
 			IPlabel.setForeground(lightTextColor);
 			enableEncryption.setForeground(lightTextColor);
+			
 			voiceMessageButton.setForeground(lightTextColor);
 			uploadFileButton.setForeground(lightTextColor);
 			playButton.setForeground(lightTextColor);
@@ -726,20 +731,25 @@ public class GUI implements ActionListener {
 		else {
 			IPlabel.setForeground(Color.BLACK);
 			enableEncryption.setForeground(Color.BLACK);
+			
 			voiceMessageButton.setForeground(Color.BLACK);
 			uploadFileButton.setForeground(Color.BLACK);
 			playButton.setForeground(Color.BLACK);
 			connectButton.setForeground(Color.BLACK);
 			hostButton.setForeground(Color.BLACK);
+			
 			IPList.setForeground(Color.BLACK);
 			IPList.setBackground(Color.WHITE);
+			
 			voiceMessageButton.setBackground(Color.WHITE);
 			uploadFileButton.setBackground(Color.WHITE);
 			playButton.setBackground(Color.WHITE);
 			connectButton.setBackground(Color.WHITE);
 			hostButton.setBackground(Color.WHITE);
+			
 			Theme.setBackground(Color.WHITE);
 			Theme.setForeground(Color.BLACK);
+			
 			usernameTextField.setBackground(Color.WHITE);
 			IPTextField.setBackground(Color.WHITE);
 			portTextField.setBackground(Color.WHITE);
@@ -747,6 +757,7 @@ public class GUI implements ActionListener {
 			messagePane.setBackground(Color.WHITE);
 			messagePane.setForeground(Color.BLACK);
 			writeMessagePane.setBackground(Color.WHITE);
+			
 			if (writeMessagePane.getText().equals(" Write Something")) 
 			{
 				writeMessagePane.setForeground(Color.GRAY);	
@@ -782,16 +793,16 @@ public class GUI implements ActionListener {
 	private JTextField IPTextField = new JTextField();
 	private JTextField portTextField = new JTextField();
 	
-	private DefaultListModel IPListModel = new DefaultListModel();
-	private JList IPList = new JList(IPListModel);
+	private DefaultListModel<String> IPListModel = new DefaultListModel<String>();
+	private JList<String> IPList = new JList<String>(IPListModel);
 	
-	private JComboBox Theme = new JComboBox();
+	private JComboBox<String> Theme = new JComboBox<String>();
 	private JRadioButton enableEncryption = new JRadioButton("Encryption");
 	
 	private JLabel IPlabel = new JLabel("IP List");
 	private JLabel portLabel = new JLabel("");
 	
-	private DefaultListModel listModel = new DefaultListModel();
+	private DefaultListModel<String> listModel = new DefaultListModel<String>();
 	
 	private Color lightBG = new Color(0xDDDDDD);
 	private Color lightTextColor = new Color(0xbebebe);
