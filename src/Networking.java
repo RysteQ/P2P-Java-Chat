@@ -48,7 +48,7 @@ public class Networking {
 				}
 			} catch (IOException e) 
 			{
-				System.out.println("Error listening to incoming requests\n" + e);
+				e.printStackTrace();
 			}
 		}
 
@@ -212,14 +212,12 @@ public class Networking {
 		{
 			Constants constants = new Constants();
 			
-			// broadcast the username list change to all users
 			broadcastMessage(constants.START_USERNAME_CHANGE_INSTRUCTION);
 			
 			for (int i = 0; i < maximumClients; i++)
 				if (availableSlots[i] == false)
 					broadcastMessage("@" + usernames[i]);
 			
-			// broadcast the end of the username list change to all users
 			broadcastMessage(constants.END_USERNAME_CHANGE_INSTRUCTION);
 		}
 		
@@ -247,8 +245,6 @@ public class Networking {
 		{
 			if (newState == false)
 				IPList[index] = clientSocket.getInetAddress().toString();
-			else
-				IPList[index] = "NULL";
 			
 			availableSlots[index] = newState;
 		}
@@ -377,9 +373,8 @@ public class Networking {
 	        byte[] buffer = new byte[4096];
 	        int bytes;
 	        
-	        while ((bytes = file.read(buffer)) > 0) {
+	        while ((bytes = file.read(buffer)) > 0)
 	        	outputStream.write(buffer, 0, bytes);
-	        }
 
 	        outputStream.close();
 	        file.close();
@@ -400,7 +395,7 @@ public class Networking {
 				} 
 				catch (IOException e) 
 				{
-					System.out.println("Error closing connectiong\n" + e);
+					e.printStackTrace();
 				}	
 			}
 			

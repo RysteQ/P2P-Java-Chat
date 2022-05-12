@@ -439,7 +439,7 @@ public class GUI implements ActionListener {
 		// create a new thread to start the client connection
 		if (e.getSource() == connectButton) 
 		{
-			if (usernameTextField.getText().length() != 0 && usernameTextField.getText().equals("Enter username") == false) 
+			if (usernameTextField.getText().equals("Enter username") == false) 
 			{
 				if (Miscelenious.validIP(IPTextField.getText()) && Miscelenious.validPort(Integer.parseInt(portTextField.getText())))
 				{
@@ -447,103 +447,100 @@ public class GUI implements ActionListener {
 					{
 						clientConnection = new Networking.client(IPTextField.getText(), Integer.parseInt(portTextField.getText()));
 						
-						if (clientConnection.isConnected()) 
-						{
-							try { 
-								clientConnection.sendMessage(usernameTextField.getText());
-							} catch (IOException e1) {
-								e1.printStackTrace();
-							}
-							
-							hostButton.enable(false);
-							usernameTextField.enable(false);
-									
-							clientConnection.setUsernameListModel(IPList);
-									
-							JOptionPane.showMessageDialog(null, "Connected to " + IPTextField.getText(), "Information", JOptionPane.INFORMATION_MESSAGE);	
-							
-							hostOrClient = "CLIENT";
-								
-							new Thread(new Runnable() 
-							{
-								public void run() 
-								{
-									Constants constants = new Constants();
-									Prompts prompt = new Prompts();
-									String receivedMessage;
-										
-									while (clientConnection.isConnected()) 
-									{
-										try 
-										{
-											clientConnection.sendMessage(" ");
-											receivedMessage = clientConnection.receiveMessage();
-
-											if (receivedMessage.isBlank() == false) 
-											{
-												if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
-														clientConnection.leave();
-													
-												if (receivedMessage.equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
-												{
-													receivedMessage = clientConnection.receiveMessage();
-													
-													IPListModel.clear();
-														
-													while (receivedMessage.equals(constants.END_USERNAME_CHANGE_INSTRUCTION) == false) 
-													{
-														IPListModel.addElement(receivedMessage.substring(1));
-														receivedMessage = clientConnection.receiveMessage();
-													}
-													
-													IPList.setModel(IPListModel);
-													
-													continue;
-												} 
-												else if (receivedMessage.split("[@]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
-												{
-													if (prompt.showMessageBoxChoice(mainForm, "Question", "Do you want to receive a file from the user " + receivedMessage.split("[@]")[1] + " ?")) 
-													{
-														Miscelenious misc = new Miscelenious();
-														
-														String[] charactersToSplit = { "@", "\\\\" };
-														String[] parameters = { usernameTextField.getText(), receivedMessage.split("[@]")[1] };
-														String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name"));
-								
-														clientConnection.sendInstruction(constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION, parameters);
-														
-														// again, I have no clue on why I have to wait
-														try { Thread.sleep(1000); } catch (Exception e1) { }
-														
-														clientConnection.receiveFile(saveLocation + misc.getLastWord(receivedMessage, charactersToSplit), constants.FILE_TRANSFER_PORT);
-													}
-													
-													continue;
-												}
-												
-												messagePane.setText(messagePane.getText() + receivedMessage + "\n");
-											}
-											
-											try 
-											{
-												Thread.sleep(10);	
-											} 
-											catch (InterruptedException error) 
-											{
-												error.printStackTrace();
-											}
-										} 
-										catch (IOException receivedMessageException) 
-										{
-											receivedMessageException.printStackTrace();
-										} 
-									}
-								}
-							}).start();
-						} else 
+						// if the client is not connected then inform the user and exit
+						if (clientConnection.isConnected() == false) 
 						{
 							JOptionPane.showMessageDialog(null, "Couldn't connect to " + IPTextField.getText(), "Error", JOptionPane.INFORMATION_MESSAGE);
-						}	
+							return;
+						}
+						
+						try { 
+							clientConnection.sendMessage(usernameTextField.getText());
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+							
+						hostButton.enable(false);
+						usernameTextField.enable(false);
+									
+						clientConnection.setUsernameListModel(IPList);
+									
+						JOptionPane.showMessageDialog(null, "Connected to " + IPTextField.getText(), "Information", JOptionPane.INFORMATION_MESSAGE);	
+							
+						hostOrClient = "CLIENT";
+								
+						new Thread(new Runnable() 
+						{
+							public void run() 
+							{
+								Constants constants = new Constants();
+								Prompts prompt = new Prompts();
+								String receivedMessage;
+										
+								while (clientConnection.isConnected()) 
+								{
+									try 
+									{
+										clientConnection.sendMessage(" ");
+										receivedMessage = clientConnection.receiveMessage();
+
+										if (receivedMessage.isBlank() == false) 
+										{
+											if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
+												clientConnection.leave();
+													
+											if (receivedMessage.equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
+											{
+												receivedMessage = clientConnection.receiveMessage();
+													
+												IPListModel.clear();
+														
+												while (receivedMessage.equals(constants.END_USERNAME_CHANGE_INSTRUCTION) == false) 
+												{
+													IPListModel.addElement(receivedMessage.substring(1));
+													receivedMessage = clientConnection.receiveMessage();
+												}
+													
+												IPList.setModel(IPListModel);
+											} else if (receivedMessage.split("[@]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
+											{
+												if (prompt.showMessageBoxChoice(mainForm, "Question", "Do you want to receive a file from the user " + receivedMessage.split("[@]")[1] + " ?")) 
+												{
+													Miscelenious misc = new Miscelenious();
+														
+													String[] charactersToSplit = { "@", "\\\\" };
+													String[] parameters = { usernameTextField.getText(), receivedMessage.split("[@]")[1] };
+													String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name"));
+								
+													clientConnection.sendInstruction(constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION, parameters);
+														
+													// again, I have no clue on why I have to wait
+													try { Thread.sleep(1000); } catch (Exception e1) { }
+														
+													clientConnection.receiveFile(saveLocation + misc.getLastWord(receivedMessage, charactersToSplit), constants.FILE_TRANSFER_PORT);
+												}
+											} else 
+											{
+												messagePane.setText(messagePane.getText() + receivedMessage + "\n");	
+											}
+										}
+											
+										try 
+										{
+											Thread.sleep(10);	
+										} 
+										catch (InterruptedException error) 
+										{
+											error.printStackTrace();
+										}
+									} 
+									catch (IOException receivedMessageException) 
+									{
+										receivedMessageException.printStackTrace();
+									} 
+								}
+							}
+						}).start();
 					}
 					catch (InterruptedException connectionException) 
 					{
@@ -598,7 +595,8 @@ public class GUI implements ActionListener {
 					String filename = "";
 					boolean sendFile = false;
 					
-					while (true) {
+					while (true) 
+					{
 						hostConnection.broadcastMessage(" ");
 						portLabel.setText("Port: " + String.valueOf(port + hostConnection.getPortOffset()));
 						
@@ -625,8 +623,7 @@ public class GUI implements ActionListener {
 								{
 									e.printStackTrace();
 								}
-							} 
-							else if (receivedMessage.split("[@]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION) && sendFile) 
+							} else if (receivedMessage.split("[@]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION) && sendFile) 
 							{
 								try 
 								{
@@ -644,17 +641,13 @@ public class GUI implements ActionListener {
 								{
 									e.printStackTrace();
 								}
-							} 
-							else if (receivedMessage.split("[@]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_DECLINED_INSTRUCTION)) 
+							} else if (receivedMessage.split("[@]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_DECLINED_INSTRUCTION)) 
 							{
-								String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + filename;
-								
-								File toDelete = new File(saveLocation);
+								File toDelete = new File(constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + filename);
 								toDelete.delete();
 								
 								sendFile = false;
-							}
-							else 
+							} else 
 							{
 								messagePane.setText(messagePane.getText() + receivedMessage + "\n");
 								hostConnection.broadcastMessage(receivedMessage);	
@@ -672,100 +665,59 @@ public class GUI implements ActionListener {
 		}
 		
 
-		if(e.getSource() == Theme) {
+		if(e.getSource() == Theme) 
+		{
 			if(Theme.getSelectedIndex() == 0)
-				changeBackground(lightBG);
+				changeBackground(Color.WHITE, Color.BLACK);
 			
 			if(Theme.getSelectedIndex() == 1)
-				changeBackground(darkerBG);
+				changeBackground(darkerBG, lightTextColor);
 		}
 	}
 
-	public void changeBackground(Color color) {
-		background = color;
+	public void changeBackground(Color backgroundColour, Color foregroundColour) {
+		mainForm.getContentPane().setBackground(backgroundColour);
+		textFieldPanel.setBackground(backgroundColour);
+		IPpanel.setBackground(backgroundColour);
+		convPanel.setBackground(backgroundColour);
+		enableEncryption.setBackground(backgroundColour);
+		controlsPanel.setBackground(backgroundColour);
+		
+		Theme.setBackground(backgroundColour);
 
-		mainForm.getContentPane().setBackground(background);
-		textFieldPanel.setBackground(background);
-		IPpanel.setBackground(background);
-		convPanel.setBackground(background);
-		enableEncryption.setBackground(background);
-		controlsPanel.setBackground(background);
-
-		Theme.setBackground(background);
-
-		if(background.equals(darkerBG)) {
-			IPlabel.setForeground(lightTextColor);
-			enableEncryption.setForeground(lightTextColor);
+		IPlabel.setForeground(foregroundColour);
+		enableEncryption.setForeground(foregroundColour);
 			
-			voiceMessageButton.setForeground(lightTextColor);
-			uploadFileButton.setForeground(lightTextColor);
-			playButton.setForeground(lightTextColor);
-			connectButton.setForeground(lightTextColor);
-			hostButton.setForeground(lightTextColor);
+		voiceMessageButton.setForeground(foregroundColour);
+		uploadFileButton.setForeground(foregroundColour);
+		playButton.setForeground(foregroundColour);
+		connectButton.setForeground(foregroundColour);
+		hostButton.setForeground(foregroundColour);
 
-			IPList.setForeground(lightTextColor);
-			IPList.setBackground(darkBG);
+		IPList.setForeground(foregroundColour);
+		IPList.setBackground(backgroundColour);
 
-			voiceMessageButton.setBackground(darkBG);
-			uploadFileButton.setBackground(darkBG);
-			playButton.setBackground(darkBG);
-			connectButton.setBackground(darkBG);
-			hostButton.setBackground(darkBG);
+		voiceMessageButton.setBackground(backgroundColour);
+		uploadFileButton.setBackground(backgroundColour);
+		playButton.setBackground(backgroundColour);
+		connectButton.setBackground(backgroundColour);
+		hostButton.setBackground(backgroundColour);
 
-			Theme.setBackground(darkBG);
-			Theme.setForeground(lightTextColor);
+		Theme.setBackground(backgroundColour);
+		Theme.setForeground(foregroundColour);
 
-			usernameTextField.setBackground(darkBG);
-			IPTextField.setBackground(darkBG);
-			portTextField.setBackground(darkBG);
+		usernameTextField.setBackground(backgroundColour);
+		IPTextField.setBackground(backgroundColour);
+		portTextField.setBackground(backgroundColour);
 
-			messagePane.setBackground(darkBG);
-			messagePane.setForeground(lightTextColor);
-			writeMessagePane.setBackground(darkBG);
+		messagePane.setBackground(backgroundColour);
+		messagePane.setForeground(foregroundColour);
+		writeMessagePane.setBackground(backgroundColour);
 			
-			if (writeMessagePane.getText().equals(" Write Something")) 
-			{
-				writeMessagePane.setForeground(Color.GRAY);	
-			} else {
-				writeMessagePane.setForeground(lightTextColor);
-			}
-		} else {
-			IPlabel.setForeground(Color.BLACK);
-			enableEncryption.setForeground(Color.BLACK);
-			
-			voiceMessageButton.setForeground(Color.BLACK);
-			uploadFileButton.setForeground(Color.BLACK);
-			playButton.setForeground(Color.BLACK);
-			connectButton.setForeground(Color.BLACK);
-			hostButton.setForeground(Color.BLACK);
-			
-			IPList.setForeground(Color.BLACK);
-			IPList.setBackground(Color.WHITE);
-			
-			voiceMessageButton.setBackground(Color.WHITE);
-			uploadFileButton.setBackground(Color.WHITE);
-			playButton.setBackground(Color.WHITE);
-			connectButton.setBackground(Color.WHITE);
-			hostButton.setBackground(Color.WHITE);
-			
-			Theme.setBackground(Color.WHITE);
-			Theme.setForeground(Color.BLACK);
-			
-			usernameTextField.setBackground(Color.WHITE);
-			IPTextField.setBackground(Color.WHITE);
-			portTextField.setBackground(Color.WHITE);
-
-			messagePane.setBackground(Color.WHITE);
-			messagePane.setForeground(Color.BLACK);
-			writeMessagePane.setBackground(Color.WHITE);
-			
-			if (writeMessagePane.getText().equals(" Write Something")) 
-			{
-				writeMessagePane.setForeground(Color.GRAY);	
-			} else {
-				writeMessagePane.setForeground(Color.BLACK);
-			}
-		}
+		if (writeMessagePane.getText().equals(" Write Something"))
+			writeMessagePane.setForeground(Color.GRAY);	
+		else
+			writeMessagePane.setForeground(foregroundColour);
 	}
 	
 	// -= Private GUI Elements =-
@@ -807,8 +759,6 @@ public class GUI implements ActionListener {
 	private Color lightBG = new Color(0xDDDDDD);
 	private Color lightTextColor = new Color(0xbebebe);
 	private Color darkerBG = new Color(0x252526);
-	private Color darkBG = new Color(0x3e3e42);
-	private Color background = lightBG;
 	
 	// -= Networking =-
 	private Networking.client clientConnection;
