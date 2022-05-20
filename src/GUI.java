@@ -229,7 +229,7 @@ public class GUI implements ActionListener {
 	{
 		Theme.setModel(new DefaultComboBoxModel<String>(new String[] {"Light Theme", "Dark Theme"}));
 		Theme.setFont(new Font("Arial", Font.PLAIN, 18));
-		Theme.setBounds(0, 145, controlPanelWidth, 40);
+		Theme.setBounds(0, 145, controlPanelWidth, 25);
 		Theme.setSelectedIndex(0);
 		
 		Theme.setBackground(Color.WHITE);
@@ -673,6 +673,11 @@ public class GUI implements ActionListener {
 			if(Theme.getSelectedIndex() == 1)
 				changeBackground(darkerBG, lightTextColor);
 		}
+		
+		if(e.getSource() == playButton) {
+			tictactoe.main(null);
+		}
+		
 	}
 
 	public void changeBackground(Color backgroundColour, Color foregroundColour) {
