@@ -105,7 +105,7 @@ public class GUI implements ActionListener
 		writeMessagePane.setForeground(Color.GRAY);
 		messagePane.setEditable(false);
 
-		writeMessagePane.setText("Write Something");
+		writeMessagePane.setText(" Write Something");
 	}
 
 	// Initialize lists
@@ -287,10 +287,10 @@ public class GUI implements ActionListener
 	        @Override
 	        public void focusGained(FocusEvent e) 
 	        {
-	        	if (writeMessagePane.getText().equals("Write Something")) 
+	        	if (writeMessagePane.getText().equals(" Write Something")) 
 	        	{
-	        		writeMessagePane.setText("");
 	        		writeMessagePane.setForeground(Color.BLACK);
+				writeMessagePane.setText("");
 	        	}
 	        }
 
@@ -300,7 +300,7 @@ public class GUI implements ActionListener
 				if (writeMessagePane.getText().equals("")) 
 				{
 					writeMessagePane.setText(" Write Something");
-					writeMessagePane.setForeground(lightTextColor);
+					writeMessagePane.setForeground(Color.GRAY);
 				}
 			}
 	    });
