@@ -111,37 +111,29 @@ public class Networking
 			return null;
 		}
 		
-		public void sendFile(String fileLocation, String clientUsername, int port) throws IOException 
+		public void sendFile(String fileLocation, String IP, int port) throws IOException 
 		{
-			for (int clientIndex = 0; clientIndex < usernames.length; clientIndex++) 
+			// Create a new socket because for some reason I cannot use the existing one
+			Socket fileSocket = new Socket(IP, port);
+					
+			// create the input / output streams
+			InputStream file = new FileInputStream(new File(fileLocation));
+			OutputStream outputStream = fileSocket.getOutputStream();
+			        
+			// create a buffer and a counter
+			byte[] buffer = new byte[4096];
+			int bytes;
+			        
+			// send the file over the socket
+			while ((bytes = file.read(buffer)) > 0) 
 			{
-				if (usernames[clientIndex].equals(clientUsername)) 
-				{
-					// Create a new socket because for some reason I cannot use the existing one
-					Socket fileSocket = new Socket(clientSocket[clientIndex].getInetAddress(), port);
-					
-					// create the input / output streams
-			        InputStream file = new FileInputStream(new File(fileLocation));
-			        OutputStream outputStream = fileSocket.getOutputStream();
-			        
-			        // create a buffer and a counter
-			        byte[] buffer = new byte[4096];
-			        int bytes;
-			        
-			        // send the file over the socket
-			        while ((bytes = file.read(buffer)) > 0)
-			        	outputStream.write(buffer, 0, bytes);
-			        
-			        // close all of the streams
-			        outputStream.close();
-			        file.close();
-			        fileSocket.close();
-					
-					return;
-				}	
+				outputStream.write(buffer, 0, bytes);	
 			}
-	        
-	        throw new IOException("User not found");
+		        
+			// close all of the streams
+			outputStream.close();
+			file.close();
+			fileSocket.close();
 		}
 
 		public void receiveFile(String saveLocation, String clientUsername, int port) throws IOException 
@@ -314,7 +306,7 @@ public class Networking
 			try 
 			{
 				IP = InetAddress.getLocalHost();
-				return IP.toString();
+				return IP.toString().split("[////]")[1];
 			} 
 			catch (UnknownHostException getIPError) 
 			{
@@ -378,10 +370,12 @@ public class Networking
 	        // receive the file
 	        byte[] buffer = new byte[4096];
 	        int bytes;
-	        
+
 	        // save the data
-	        while ((bytes = input.read(buffer)) > 0)
-	        	fileOutput.write(buffer, 0, bytes);
+	        while ((bytes = input.read(buffer)) > 0) 
+	        {
+	        	fileOutput.write(buffer, 0, bytes);	
+	        }
 
 	        // close the streams
 	        fileOutput.close();
@@ -403,8 +397,10 @@ public class Networking
 	        byte[] buffer = new byte[4096];
 	        int bytes;
 	        
-	        while ((bytes = file.read(buffer)) > 0)
-	        	outputStream.write(buffer, 0, bytes);
+	        while ((bytes = file.read(buffer)) > 0) 
+	        {
+	        	outputStream.write(buffer, 0, bytes);	
+	        }
 
 	        // close the streams
 	        outputStream.close();

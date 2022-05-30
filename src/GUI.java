@@ -549,9 +549,14 @@ public class GUI implements ActionListener
 												String_Manipulator stringManipulator = new String_Manipulator();
 															
 												String[] charactersToSplit = { "|", "\\\\" };
-												String[] parameters = { usernameTextField.getText(), receivedMessage.split("[|]")[1] };
 												String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name"));
 									
+												String[] parameters = 
+												{ 
+													clientConnection.getLocalAddress(), 
+													receivedMessage.split("[|]")[1] 
+												};
+												
 												clientConnection.sendInstruction(constants.COMMAND_START + constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION, parameters);
 															
 												// again, I have no clue on why I have to wait
@@ -727,10 +732,12 @@ public class GUI implements ActionListener
 								try 
 								{
 									// I never code in java so the code is in the same shape as the Greek economy
-									try { Thread.sleep(1000); } catch (Exception e1) { }
-										
+									try { Thread.sleep(2000); } catch (Exception e1) { }
+									
 									String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + filename;
-									hostConnection.sendFile(saveLocation, receivedMessage.split("[|]")[1], constants.FILE_TRANSFER_PORT);
+									String IP = receivedMessage.split("[|]")[1];
+									
+									hostConnection.sendFile(saveLocation, IP, constants.FILE_TRANSFER_PORT);
 										
 									File toDelete = new File(saveLocation);
 									toDelete.delete();

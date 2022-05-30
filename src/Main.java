@@ -1,5 +1,6 @@
 import java.awt.EventQueue;
 import java.io.IOException;
+
 import javax.swing.JFrame;
 
 public class Main 
@@ -13,7 +14,7 @@ public class Main
 				try 
 				{
 					JFrame mainForm = new JFrame();
-						
+					
 					GUI window = new GUI(mainForm);
 					
 					window.initGUI();
