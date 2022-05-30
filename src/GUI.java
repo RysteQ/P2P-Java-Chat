@@ -562,7 +562,7 @@ public class GUI implements ActionListener
 												// again, I have no clue on why I have to wait
 												try { Thread.sleep(1000); } catch (Exception e1) { }
 															
-												clientConnection.receiveFile(saveLocation + stringManipulator .getLastWord(receivedMessage, charactersToSplit), constants.FILE_TRANSFER_PORT);
+												clientConnection.receiveFile(saveLocation + stringManipulator.getLastWord(receivedMessage, charactersToSplit), constants.FILE_TRANSFER_PORT);
 											}
 										} 
 										else if(command.equals(constants.ASK_GAME)) 
@@ -612,7 +612,7 @@ public class GUI implements ActionListener
 									{
 										error.printStackTrace();
 									}
-								} 
+								}
 								catch (IOException receivedMessageException) 
 								{
 									try 
