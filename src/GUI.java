@@ -69,7 +69,7 @@ public class GUI implements ActionListener
 		        		hostConnection.close(i);
 		        	}
 		        } 
-		        else 
+		        else if (hostOrClient.equals("CLIENT"))
 		        {
 		        	if (clientConnection.isConnected()) 
 		        	{
@@ -83,6 +83,8 @@ public class GUI implements ActionListener
 						}
 		        	}
 		        }
+		        
+		        mainForm.dispose();
 		    }
 		});
 	}
