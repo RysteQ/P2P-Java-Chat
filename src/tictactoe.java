@@ -1,8 +1,7 @@
-import java.awt.EventQueue;
 import javax.swing.JFrame;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
@@ -16,30 +15,209 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import java.awt.Font;
-import javax.swing.JTextArea;
 
-public class tictactoe implements ActionListener{
-
-	public static void main(String[] args) {		//Launch the game
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					tictactoe window = new tictactoe();
-					window.frmTicTacToe.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+public class tictactoe implements ActionListener
+{
+	public tictactoe(boolean singleOrMulti, boolean slaveOrMaster, String IP, int port)
+	{
+		this.singleOrMulti = singleOrMulti;
+		this.slaveOrMaster = slaveOrMaster;
+		this.IP = IP;
+		this.port = port;
 	}
-
 	
-	public tictactoe() {		// Create the application.						
+	public void start() 
+	{					
 		initialize();
 	}
  
-	public void initialize() {		//Initialize the contents of the frame.
-		
+	public void initialize() 
+	{
+		if (singleOrMulti)
+		{
+			if (slaveOrMaster)
+			{
+				serverConnection = new Networking.host(port);
+				turnAllowed = true;
+
+				serverConnection.bind(false);
+
+				new Thread(new Runnable() 
+				{
+					public void run() 
+					{
+						Prompts prompt = new Prompts();
+						Constants consts = new Constants();
+						
+						String receivedMessage;
+						int x;
+						int y;
+						
+						
+						JButton[][] buttons = 
+						{
+							{ topLeft, topMid, topRight },
+							{ midLeft, midMid, midRight },
+							{ botLeft, botMid, botRight }
+						};
+						
+						while (true) 
+						{
+							do 
+							{
+								receivedMessage = serverConnection.receiveMessages();	
+							}
+							while (receivedMessage == null);
+							
+							if (receivedMessage.equals(consts.ASK_RESET_APPROVAL)) 
+							{
+								if (prompt.showMessageBoxChoice(frmTicTacToe, "Question", "Do you want to reset the game ?")) 
+								{
+									reset();
+								}
+								
+								serverConnection.broadcastMessage(consts.GAME_RESET_APPROVED);
+								
+								continue;
+							} 
+							else if (receivedMessage.equals(consts.GAME_RESET_APPROVED)) 
+							{
+								reset();
+								
+								continue;
+							}
+							
+							x = Integer.parseInt(receivedMessage.split("[|]")[0]);
+							y = Integer.parseInt(receivedMessage.split("[|]")[1]);
+							
+							buttons[x][y].setIcon(circleIcon);
+
+							allowedMove[x][y] = false;
+							turnAllowed = true;
+							table[x][y] = "O";
+							
+							check();
+						}
+					}
+				}).start();
+			}
+			else 
+			{
+				try 
+				{
+					Thread.sleep(100);
+					
+					clientConnection = new Networking.client(IP, port);
+					
+					new Thread(new Runnable() 
+					{
+						public void run() 
+						{
+							Constants consts = new Constants();
+							Prompts prompt = new Prompts();
+							
+							String receivedMessage = null;
+							String winner = null;
+							int x;
+							int y;
+							
+							JButton[][] buttons = 
+							{
+								{ topLeft, topMid, topRight },
+								{ midLeft, midMid, midRight },
+								{ botLeft, botMid, botRight }
+							};
+							
+							while (true) 
+							{
+								try 
+								{
+									do 
+									{
+										receivedMessage = clientConnection.receiveMessage();	
+									}
+									while (receivedMessage == null);
+								} 
+								catch (IOException receivingMoveError) 
+								{
+									receivingMoveError.printStackTrace();
+								}
+								
+								if (receivedMessage.split("[|]")[0].equals(consts.ANNOUNCE_WINNER)) 
+								{
+									winner = receivedMessage.split("[|]")[1];
+									
+									if (winner.equals("YOU")) 
+									{
+										JOptionPane.showMessageDialog(null, "YOU WINS !!!!", "Information", JOptionPane.INFORMATION_MESSAGE);	
+										
+										int currentWins = Integer.parseInt(winsShow.getText());
+										
+										winsShow.setText(Integer.toString(currentWins + 1));
+									} 
+									else if (winner.equals("ENEMY"))
+									{
+										JOptionPane.showMessageDialog(null, "ENEMY WINS !!!!", "Information", JOptionPane.INFORMATION_MESSAGE);	
+									
+										int currentLoses = Integer.parseInt(defeatsShow.getText());
+										
+										defeatsShow.setText(Integer.toString(currentLoses + 1));
+									} 
+									else if (winner.equals("DRAW"))
+									{
+										JOptionPane.showMessageDialog(null, "Draw !!!!", "Information", JOptionPane.INFORMATION_MESSAGE);	
+										
+										int currentDraws = Integer.parseInt(drawsShow.getText());
+										
+										drawsShow.setText(Integer.toString(currentDraws + 1));
+									}
+							
+									reset();
+									
+									continue;
+								} 
+								else if (receivedMessage.equals(consts.ASK_RESET_APPROVAL))
+								{
+									if (prompt.showMessageBoxChoice(frmTicTacToe, "Question", "Do you want to reset the game ?")) 
+									{
+										try 
+										{
+											clientConnection.sendMessage(consts.GAME_RESET_APPROVED);
+											reset();
+										} catch (IOException sendErrorMessage) 
+										{
+											sendErrorMessage.printStackTrace();
+										}
+									}
+								
+									continue;
+								} else if (receivedMessage.equals(consts.GAME_RESET_APPROVED))
+								{
+									reset();
+								}
+							
+								// get the coordinates
+								x = Integer.parseInt(receivedMessage.split("[|]")[0]);
+								y = Integer.parseInt(receivedMessage.split("[|]")[1]);
+								
+								// change the icon of the corresponding button
+								buttons[x][y].setIcon(xIcon);
+								
+								// update some values for the map etc
+								allowedMove[x][y] = false;
+								turnAllowed = true;
+								table[x][y] = "O";
+							}
+						}
+					}).start();
+				} 
+				catch (InterruptedException connectionError)
+				{
+					connectionError.printStackTrace();
+				}
+			}
+		}
+			
 		frmTicTacToe = new JFrame();
 		frmTicTacToe.setResizable(false);
 		frmTicTacToe.setTitle("TIC-TAC-TOE");
@@ -49,26 +227,25 @@ public class tictactoe implements ActionListener{
 		frmTicTacToe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frmTicTacToe.getContentPane().setLayout(null);
 		
-		for(int i = 0; i < table.length; i++) {
-			for(int j = 0; j < table.length; j++) {
+		for(int i = 0; i < table.length; i++)
+			for(int j = 0; j < table.length; j++)
 				table[i][j] = "";
-			}
-		}
 		
 		initPanels();
 		initSeperators();
 		initPlaces();
 		initLabels();
 		initScoreboard();
+		
+		frmTicTacToe.setVisible(true);
 	}
-	
-	private void initPanels() {
 
+	private void initPanels() 
+	{
 		playPanel.setBackground(Color.LIGHT_GRAY);
 		playPanel.setBounds(0, 0, 300, 260);
 		frmTicTacToe.getContentPane().add(playPanel);
-		playPanel.setLayout(null);
-		
+		playPanel.setLayout(null);	
 
 		infoPanel.setBackground(Color.LIGHT_GRAY);
 		infoPanel.setBounds(306, 0, 129, 260);
@@ -76,8 +253,8 @@ public class tictactoe implements ActionListener{
 		infoPanel.setLayout(null);
 	}
 	
-	private void initPlaces() {
-		
+	private void initPlaces() 
+	{
 		Border emptyBorder = BorderFactory.createEmptyBorder();
 		
 		topLeft.setBackground(Color.LIGHT_GRAY);
@@ -87,8 +264,7 @@ public class tictactoe implements ActionListener{
 		topLeft.addActionListener(this);
 		topLeft.setFocusPainted(false);
 		playPanel.add(topLeft);
-		
-		
+			
 		topMid.setBackground(Color.LIGHT_GRAY);
 		topMid.setBounds(101, 1, 98, 77);
 		topMid.setBorder(emptyBorder);
@@ -96,7 +272,6 @@ public class tictactoe implements ActionListener{
 		topMid.addActionListener(this);
 		topMid.setFocusPainted(false);
 		playPanel.add(topMid);
-		
 		
 		topRight.setBackground(Color.LIGHT_GRAY);
 		topRight.setBounds(201, 1, 98, 77);
@@ -106,7 +281,6 @@ public class tictactoe implements ActionListener{
 		topRight.setFocusPainted(false);
 		playPanel.add(topRight);
 		
-		
 		midLeft.setBackground(Color.LIGHT_GRAY);
 		midLeft.setBounds(1, 82, 98, 77);
 		midLeft.setBorder(emptyBorder);
@@ -114,7 +288,6 @@ public class tictactoe implements ActionListener{
 		midLeft.addActionListener(this);
 		midLeft.setFocusPainted(false);
 		playPanel.add(midLeft);
-		
 		
 		midMid.setBackground(Color.LIGHT_GRAY);
 		midMid.setBounds(101, 81, 98, 77);
@@ -124,7 +297,6 @@ public class tictactoe implements ActionListener{
 		midMid.setFocusPainted(false);
 		playPanel.add(midMid);
 		
-		
 		midRight.setBackground(Color.LIGHT_GRAY);
 		midRight.setBounds(201, 81, 98, 77);
 		midRight.setBorder(emptyBorder);
@@ -132,7 +304,6 @@ public class tictactoe implements ActionListener{
 		midRight.addActionListener(this);
 		midRight.setFocusPainted(false);
 		playPanel.add(midRight);
-		
 		
 		botLeft.setBackground(Color.LIGHT_GRAY);
 		botLeft.setBounds(1, 161, 98, 87);
@@ -142,7 +313,6 @@ public class tictactoe implements ActionListener{
 		botLeft.setFocusPainted(false);
 		playPanel.add(botLeft);
 		
-		
 		botMid.setBackground(Color.LIGHT_GRAY);
 		botMid.setBounds(101, 161, 98, 87);
 		botMid.setBorder(emptyBorder);
@@ -151,7 +321,6 @@ public class tictactoe implements ActionListener{
 		botMid.setFocusPainted(false);
 		playPanel.add(botMid);
 		
-		
 		botRight.setBackground(Color.LIGHT_GRAY);
 		botRight.setBounds(201, 161, 98, 87);
 		botRight.setBorder(emptyBorder);
@@ -159,9 +328,8 @@ public class tictactoe implements ActionListener{
 		botRight.addActionListener(this);
 		botRight.setFocusPainted(false);
 		playPanel.add(botRight);
-		
-
-		start.setFont(new Font("Arial", Font.BOLD, 15));   // NOT a place to click BUT its the button to start the game!!!
+	
+		start.setFont(new Font("Arial", Font.BOLD, 15));
 		start.setBounds(10, 230, 110, 25);
 		start.setContentAreaFilled(false);
 		start.addActionListener(this);
@@ -169,23 +337,21 @@ public class tictactoe implements ActionListener{
 		infoPanel.add(start);
 	}
 	
-	private void initSeperators() {
+	private void initSeperators() 
+	{
 		separator_0.setOrientation(SwingConstants.VERTICAL);
 		separator_0.setForeground(Color.BLACK);
 		separator_0.setBounds(100, 10, 1, 240);
 		playPanel.add(separator_0);
-		
-		
+			
 		separator_1.setForeground(Color.BLACK);
 		separator_1.setOrientation(SwingConstants.VERTICAL);
 		separator_1.setBounds(200, 10, 1, 240);
 		playPanel.add(separator_1);
 		
-		
 		separator_2.setForeground(Color.BLACK);
 		separator_2.setBounds(10, 80, 280, 1);
 		playPanel.add(separator_2);
-		
 
 		separator_3.setForeground(Color.BLACK);
 		separator_3.setBounds(10, 160, 280, 1);
@@ -195,42 +361,39 @@ public class tictactoe implements ActionListener{
 		separator_4.setOrientation(SwingConstants.VERTICAL);
 		separator_4.setBounds(303, 0, 1, 270);
 		frmTicTacToe.getContentPane().add(separator_4);
-		
-		
-		ticTacToeUnderline.setForeground(Color.BLACK);	//its NOT used as a seperator
+				
+		ticTacToeUnderline.setForeground(Color.BLACK);
 		ticTacToeUnderline.setBounds(20, 25, 95, 2);
 		infoPanel.add(ticTacToeUnderline);
 	}
-	
-	private void initLabels() {
+
+	private void initLabels() 
+	{
 		ticTacToeLabel.setFont(new Font("Arial", Font.BOLD, 14));
 		ticTacToeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		ticTacToeLabel.setBounds(10, 11, 110, 15);
 		infoPanel.add(ticTacToeLabel);
 	}
 	
-	private void initScoreboard() {
+	private void initScoreboard() 
+	{
 		score.setBackground(Color.LIGHT_GRAY);
 		score.setFont(new Font("Arial", Font.BOLD, 16));
 		score.setHorizontalAlignment(SwingConstants.CENTER);
 		score.setBounds(20, 49, 99, 14);
-		infoPanel.add(score);
-		
+		infoPanel.add(score);	
 		
 		wins.setFont(new Font("Arial", Font.BOLD, 14));
 		wins.setBounds(10, 75, 46, 14);
 		infoPanel.add(wins);
 		
-		
 		draws.setFont(new Font("Arial", Font.BOLD, 14));
 		draws.setBounds(10, 100, 71, 14);
 		infoPanel.add(draws);
 		
-		
 		defeats.setFont(new Font("Arial", Font.BOLD, 14));
 		defeats.setBounds(10, 125, 71, 14);
 		infoPanel.add(defeats);
-		
 		
 		winsShow.setBackground(Color.LIGHT_GRAY);
 		winsShow.setForeground(new Color(46, 139, 87));
@@ -238,7 +401,6 @@ public class tictactoe implements ActionListener{
 		winsShow.setFont(new Font("Arial", Font.BOLD, 17));
 		winsShow.setBounds(66, 74, 38, 15);
 		infoPanel.add(winsShow);
-		
 		
 		drawsShow.setForeground(Color.DARK_GRAY);
 		drawsShow.setHorizontalAlignment(SwingConstants.TRAILING);
@@ -256,74 +418,120 @@ public class tictactoe implements ActionListener{
 	}
 	
 	@Override
-	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == topLeft) {
-			turn+=1;
-			setIcon(topLeft, 0, 0);
-			check();
-		}
-		if(e.getSource() == topMid) {
-			turn+=1;
-			setIcon(topMid, 0, 1);
-			check();
-		}
-		if(e.getSource() == topRight) {
-			turn+=1;
-			setIcon(topRight, 0, 2);
-			check();
-		}
-		if(e.getSource() == midLeft) {
-			turn+=1;
-			setIcon(midLeft, 1, 0);
-			check();
-		}
-		if(e.getSource() == midMid) {
-			turn+=1;
-			setIcon(midMid, 1, 1);
-			check();
-		}
-		if(e.getSource() == midRight) {
-			turn+=1;
-			setIcon(midRight, 1, 2);
-			check();
-		}
-		if(e.getSource() == botLeft) {
-			turn+=1;
-			setIcon(botLeft, 2, 0);
-			check();
-		}
-		if(e.getSource() == botMid) {
-			turn+=1;
-			setIcon(botMid, 2, 1);
-			check();
-		}
-		if(e.getSource() == botRight) {
-			turn+=1;
-			setIcon(botRight, 2, 2);
-			check();
-		}
-		if(e.getSource() == start) {
-			reset();
-		}
+	public void actionPerformed(ActionEvent e) 
+	{
+		Constants consts = new Constants();
 		
+		if(e.getSource() == topLeft) setIcon(0, 0);
+		if(e.getSource() == topMid) setIcon(0, 1);
+		if(e.getSource() == topRight) setIcon(0, 2);
+		if(e.getSource() == midLeft) setIcon(1, 0);
+		if(e.getSource() == midMid) setIcon(1, 1);
+		if(e.getSource() == midRight) setIcon(1, 2);
+		if(e.getSource() == botLeft) setIcon(2, 0);
+		if(e.getSource() == botMid) setIcon(2, 1);
+		if(e.getSource() == botRight) setIcon(2, 2);
+		
+		if(e.getSource() == start) 
+		{
+			if (singleOrMulti) 
+			{		
+				if (slaveOrMaster == false)
+				{
+					try 
+					{
+						clientConnection.sendMessage(consts.ASK_RESET_APPROVAL);
+					} 
+					catch (IOException sendMessageError) 
+					{
+						sendMessageError.printStackTrace();
+					}
+				} else 
+				{
+					serverConnection.broadcastMessage(consts.ASK_RESET_APPROVAL);
+				}
+			} else 
+			{
+				reset();
+			}
+		}
+
+		if (singleOrMulti == false) 
+		{
+			turn++;
+			check();	
+		}
 	}
 	
 	
-	private void setIcon(JButton button, int x, int y) {
-		button.removeActionListener(this);
-		if(turn%2 == 0) {
-			button.setIcon(xIcon);
-			table[x][y] = "X";
+	private void setIcon(int x, int y) {
+		// I am now proud of this "shortcut" but there was a problem with the new thread I created
+		// for multiplayer so I couldn't care less if this is messy or not
+		if (allowedMove[x][y] == false)
+			return;
+		
+		if (singleOrMulti) 
+		{
+			if (turnAllowed == false)
+				return;
+			
+			try 
+			{
+				if (slaveOrMaster) 
+				{
+					serverConnection.broadcastMessage
+					(
+						Integer.toString(x) 
+						+ "|"  		
+						+ Integer.toString(y) 
+						+ "|" 
+						+ "X"
+					);
+					
+					buttonMap[x][y].setIcon(xIcon);
+					table[x][y] = "X";
+					
+					check();
+				} 
+				else 
+				{
+					clientConnection.sendMessage
+					(
+						Integer.toString(x) 
+						+ "|" 
+						+ Integer.toString(y)
+						+ "|" 
+						+ "O"
+					);
+					
+					buttonMap[x][y].setIcon(circleIcon);
+					table[x][y] = "O";
+				}
+				
+				turnAllowed = false;
+			} 
+			catch (Exception e) 
+			{
+				e.printStackTrace();
+			}
+		} 
+		else 
+		{
+			if(turn % 2 == 0)
+			{
+				buttonMap[x][y].setIcon(xIcon);
+				table[x][y] = "X";
+			} 
+			else if(turn % 2 == 1)
+			{
+				buttonMap[x][y].setIcon(circleIcon);
+				table[x][y] = "O";
+			}	
 		}
-		else if(turn%2 == 1){
-			button.setIcon(circleIcon);
-			table[x][y] = "O";
-		}
-		System.out.println(turn);
 	}
 	
-	public void reset() {
-		
+	public void reset() 
+	{
 		topLeft.setIcon(null);
 		topMid.setIcon(null);
 		topRight.setIcon(null);
@@ -344,85 +552,112 @@ public class tictactoe implements ActionListener{
 		botMid.addActionListener(this);
 		botRight.addActionListener(this);
 		
+		for (int x = 0; x < 3; x++) 
+		{
+			for (int y = 0; y < 3; y++) 
+			{
+				allowedMove[x][y] = true;
+				table[x][y] = "";
+			}
+		}
+		
 		turn = 0;
-		System.out.println("RESET");											//DELETE WHEN FINISHED
-		System.out.println("--------------------------------");
 	}
 	
-	private void check() {
-		if((table[0][0].equals(table[0][1])) && (table[0][0].equals(table[0][2])) && !table[0][0].equals("")) {
-			if(table[0][0].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
+	private void check() 
+	{
+		Constants consts = new Constants();
+		String winner = "NULL";
+		
+		// horizontal check
+		for (int x = 0; x < 3; x++) 
+		{
+			if (table[x][0].equals(table[x][1]) && table[x][0].equals(table[x][2])) 
+			{
+				if (table[x][0].equals("X")) 
+				{
+					winner = "PLAYER 1";		
+				} 
+				else if (table[x][0].equals("O")) 
+				{
+					winner = "PLAYER 2";
+				}	
 			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
+		}
+		
+		// vertical check
+		for (int y = 0; y < 3; y++) 
+		{
+			if (table[0][y].equals(table[1][y]) && table[0][y].equals(table[2][y])) 
+			{
+				if (table[0][y].equals("X")) 
+				{
+					winner = "PLAYER 1";		
+				} 
+				else if (table[0][y].equals("O")) 
+				{
+					winner = "PLAYER 2";
+				}	
 			}
+		}
+		
+		// diagonal check
+		if ((table[0][0].equals(table[1][1]) && table[0][0].equals(table[2][2])) || table[0][2].equals(table[1][1]) && table[0][0].equals(table[2][0]))
+		{
+			if (table[1][1].equals("X"))
+			{
+				winner = "PLAYER 1";
+			} 
+			else if (table[1][1].equals("O")) 
+			{
+				winner = "PLAYER 2";
+			}
+		}
+		
+		if (winner.equals("NULL") == false) 
+		{
+			if (singleOrMulti) 
+			{
+				if (winner.equals("PLAYER 1")) 
+				{
+					int currentWins = Integer.parseInt(winsShow.getText());
+					JOptionPane.showMessageDialog(null, "YOU WIN !!!!", "Information", JOptionPane.INFORMATION_MESSAGE);	
+					
+					serverConnection.broadcastMessage(consts.ANNOUNCE_WINNER + "|" + "ENEMY");
+					winsShow.setText(Integer.toString(currentWins + 1));
+				} 
+				else 
+				{										
+					int currentLoses = Integer.parseInt(defeatsShow.getText());
+
+					JOptionPane.showMessageDialog(null, "ENEMY WINS !!!!", "Information", JOptionPane.INFORMATION_MESSAGE);	
+					
+					serverConnection.broadcastMessage(consts.ANNOUNCE_WINNER + "|" + "YOU");
+					defeatsShow.setText(Integer.toString(currentLoses + 1));
+				}
+			}
+			
 			reset();
 		}
-		if((table[1][0].equals(table[1][1])) && (table[1][0].equals(table[1][2])) && !table[1][0].equals("")) {
-			if(table[1][0].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			reset();
+		
+		
+		for (int x = 0; x < 3; x++)
+			for (int y = 0; y < 3; y++)
+				if (allowedMove[x][y] == true)
+					return;
+		
+		JOptionPane.showMessageDialog(null, "Out of moves", "Information", JOptionPane.INFORMATION_MESSAGE);
+		
+		if (singleOrMulti) 
+		{
+			int currentDraws = Integer.parseInt(drawsShow.getText());
+		
+			serverConnection.broadcastMessage(consts.ANNOUNCE_WINNER + "|" + "DRAW");	
+			drawsShow.setText(Integer.toString(currentDraws + 1));
 		}
-		if((table[2][0].equals(table[2][1])) && (table[2][0].equals(table[2][2])) && !table[2][0].equals("")) {
-			if(table[2][0].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			reset();
-		}
-		if((table[0][0].equals(table[1][0])) && (table[0][0].equals(table[2][0])) && !table[0][0].equals("")) {
-			if(table[0][0].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-		}
-		if((table[0][1].equals(table[1][1])) && (table[0][1].equals(table[2][1])) && !table[0][1].equals("")) {
-			if(table[0][1].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			reset();
-		}
-		if((table[0][2].equals(table[1][2])) && (table[0][2].equals(table[2][2])) && !table[0][2].equals("")) {
-			if(table[0][2].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			reset();
-		}
-		if((table[0][0].equals(table[1][1])) && (table[0][0].equals(table[2][2])) && !table[0][0].equals("")) {
-			if(table[0][0].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			reset();
-		}
-		if((table[0][2].equals(table[1][1])) && (table[0][2].equals(table[2][0])) && !table[0][2].equals("")) {
-			if(table[0][2].equals("O")) {
-				JOptionPane.showMessageDialog(null, "PLAYER 1 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			else {
-				JOptionPane.showMessageDialog(null, "PLAYER 2 WINS!", "Information", JOptionPane.INFORMATION_MESSAGE);
-			}
-			reset();
-		}
-	}
-	
+		
+		reset();
+	}	
 	
 	private JPanel playPanel = new JPanel();
 	private JPanel infoPanel = new JPanel();
@@ -462,4 +697,25 @@ public class tictactoe implements ActionListener{
 	private int turn = 0;
 	private String[][] table = new String[3][3];
 	
+	private boolean[][] allowedMove = 
+	{
+		{ true, true, true },
+		{ true, true, true },
+		{ true, true, true }
+	};
+	
+	private JButton[][] buttonMap = 
+	{
+		{ topLeft, topMid, topRight },
+		{ midLeft, midMid, midRight },
+		{ botLeft, botMid, botRight }
+	};
+	
+	private boolean singleOrMulti = false;
+	private boolean slaveOrMaster = false;
+	private boolean turnAllowed = false;
+	private String IP = "";
+	private int port = 0;
+	private Networking.client clientConnection = null;
+	private Networking.host serverConnection = null;
 }

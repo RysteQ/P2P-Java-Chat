@@ -4,7 +4,8 @@
 */
 
 
-public class Miscelenious {
+public class Verifiers 
+{
 	public static boolean validIP(String IPToTest) 
 	{
 		String[] tokens = IPToTest.split("[.]", 4);
@@ -15,7 +16,8 @@ public class Miscelenious {
 			{
 				if (Integer.parseInt(token) > 255 || Integer.parseInt(token) < 0 || token.contains(".") == true)
 					return false;
-			} catch (Exception e) 
+			} 
+			catch (Exception e) 
 			{
 				e.printStackTrace();
 			}
@@ -30,13 +32,5 @@ public class Miscelenious {
 			return false;
 					
 		return true;
-	}
-	
-	public String getLastWord(String toSplit, String[] charactersToSplit) 
-	{
-		for (int i = 0; i < charactersToSplit.length; i++)
-			toSplit = toSplit.split(charactersToSplit[i])[toSplit.split(charactersToSplit[i]).length - 1];
-		
-		return toSplit;
 	}
 }

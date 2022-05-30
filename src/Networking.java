@@ -12,15 +12,18 @@ import java.net.Socket;
 
 import javax.swing.*;
 
-public class Networking {
-	public static class host extends Thread {
+public class Networking 
+{
+	public static class host extends Thread 
+	{
 		host (int portNumber) 
 		{
 			this.portNumber = portNumber;
 			initAvailableSlots();
 		}
 		
-		public void bind() throws InterruptedException 
+		// TODO After this project is done (10/06) I will refactor this whole project even more
+		public void bind(boolean getUsername)
 		{
 			short availableSlot;
 			
@@ -28,25 +31,25 @@ public class Networking {
 			{
 				availableSlot = availableSlot();
 				
-				if (availableSlot != -1) 
+				if (availableSlot != -1)
 				{
 					// save the user socket
 					serverSocket = new ServerSocket(portNumber + portOffset);
 					clientSocket[availableSlot] = serverSocket.accept();
-					
+
 					// get the input / output stream
 					inputStream[availableSlot] = new BufferedReader(new InputStreamReader(clientSocket[availableSlot].getInputStream()));
 					outputStream[availableSlot] = new PrintWriter(clientSocket[availableSlot].getOutputStream(), true);
-					usernames[availableSlot] = inputStream[availableSlot].readLine();
+					
+					if (getUsername)
+						usernames[availableSlot] = inputStream[availableSlot].readLine();
 						
 					portOffset++;
 					
-					// do other miscelenious actions
-					changeAvailableSlotStatus(availableSlot, false, clientSocket[availableSlot]);						
-					broadcastUsernames();
-					updateGUIUsernames();
+					changeAvailableSlotStatus(availableSlot, false, clientSocket[availableSlot]);
 				}
-			} catch (IOException e) 
+			} 
+			catch (IOException e) 
 			{
 				e.printStackTrace();
 			}
@@ -66,10 +69,14 @@ public class Networking {
 			while (usernames[index].equals(username) == false && index != maximumClients)
 				index++;
 			
-			if (index != maximumClients)
-				outputStream[index].println(message);
-			else
+			if (index != maximumClients) 
+			{
+				outputStream[index].println(message);	
+			}
+			else 
+			{
 				throw new IOException("User not found");
+			}
 		}
 		
 		public int getPortOffset() 
@@ -141,23 +148,28 @@ public class Networking {
 			{
 				if (usernames[clientIndex].equals(clientUsername)) 
 				{
+					// connect to the sender
 					ServerSocket fileTransferSocket = new ServerSocket(port);
 					Socket fileTransferClient = fileTransferSocket.accept();
 					
+					// make sure the file exists
 					File transferedFile = new File(saveLocation);
 					
 					if (transferedFile.exists() == false)
 						transferedFile.createNewFile();
 					
+					// create the input / output stream
 			        InputStream input = fileTransferClient.getInputStream();;
 			        OutputStream fileOutput = new FileOutputStream(saveLocation);
 
+			        // receive and save the file
 			        byte[] buffer = new byte[4096];
 			        int bytes;
 			        
 			        while ((bytes = input.read(buffer)) > 0)
 			        	fileOutput.write(buffer, 0, bytes);
 
+			        // close all of the streams
 			        fileOutput.close();
 			        input.close();
 			        fileTransferSocket.close();
@@ -176,7 +188,8 @@ public class Networking {
 			{
 				changeAvailableSlotStatus(index, true, clientSocket[index]);
 				clientSocket[index].close();
-			} catch (IOException e) 
+			} 
+			catch (IOException e) 
 			{
 				e.printStackTrace();
 			}
@@ -190,7 +203,7 @@ public class Networking {
 				
 				for (int i = 0; i < maximumClients; i++) 
 				{
-					outputStream[i].println(constants.CLOSING_HOST);
+					outputStream[i].println(constants.COMMAND_START + constants.CLOSING_HOST);
 					clientSocket[i].close();
 				}
 				
@@ -201,44 +214,37 @@ public class Networking {
 			}
 		}
 		
-		public void setUsernameListModel(JList<String> usernameList, DefaultListModel<String> usernameListModel) 
+		public String getUserIP(String username) 
 		{
-			this.usernameList = usernameList;
-			this.usernameListModel = usernameListModel;
+			for (int i = 0; i < usernames.length; i++)
+				if (usernames[i].equals(username))
+					return clientSocket[i].getLocalAddress().toString();
+			
+			return "NULL";
 		}
 		
-		// THIS WILL BE REMOVED
-		private void broadcastUsernames() 
+		public String getIP() 
 		{
-			Constants constants = new Constants();
-			
-			broadcastMessage(constants.START_USERNAME_CHANGE_INSTRUCTION);
-			
-			for (int i = 0; i < maximumClients; i++)
-				if (availableSlots[i] == false)
-					broadcastMessage("@" + usernames[i]);
-			
-			broadcastMessage(constants.END_USERNAME_CHANGE_INSTRUCTION);
+			return serverSocket.getLocalSocketAddress().toString();
 		}
 		
-		private void updateGUIUsernames() 
+		public String[] getUsarnames() 
 		{
-			usernameListModel.clear();
-			
-			for (int i = 0; i < maximumClients; i++)
-				if (availableSlots[i] == false)
-					usernameListModel.addElement(usernames[i]);
-			
-			usernameList.setModel(usernameListModel);
+			return usernames;
 		}
 		
 		private short availableSlot() 
 		{
-			for (short i = 0; i < maximumClients; i++) 
-				if (availableSlots[i] == true)
+			for (short i = 0; i < availableSlots.length; i++)
+				if (availableSlots[i])
 					return i;
 			
 			return -1;
+		}
+		
+		public boolean isSlotAvailable(int slot) 
+		{
+			return availableSlots[slot];
 		}
 		
 		private void changeAvailableSlotStatus(int index, boolean newState, Socket clientSocket) 
@@ -268,9 +274,6 @@ public class Networking {
 		private String[] usernames = new String[maximumClients];
 		private int portNumber;
 		private int portOffset = 0;
-		
-		private DefaultListModel<String> usernameListModel;
-		private JList<String> usernameList;
 	}
 
 	
@@ -292,15 +295,19 @@ public class Networking {
 				inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 				outputStream = new PrintWriter(clientSocket.getOutputStream(), true);
 
-				connected = true;
-				
 				return true;
-			} catch (IOException e) 
+			} 
+			catch (IOException e)
 			{ 
 				e.printStackTrace();
 			}
 			
 			return false;
+		}
+		
+		public String getLocalAddress() 
+		{
+			return clientSocket.getLocalAddress().toString().substring(1);
 		}
 		
 		public void sendMessage(String message) throws IOException 
@@ -324,7 +331,8 @@ public class Networking {
 					completeInstruction += instructionparameterSeperator + parameters[i];
 				
 				outputStream.println(completeInstruction);
-			} else 
+			} 
+			else 
 			{
 				throw new IOException("There is not an active connection");	
 			}
@@ -340,23 +348,28 @@ public class Networking {
 
 		public void receiveFile(String saveLocation, int port) throws IOException 
 		{
+			// create a new socket to receive the file from
 			ServerSocket fileTransferSocket = new ServerSocket(port);
 			Socket fileTransferClient = fileTransferSocket.accept();
 			
+			// make sure the file exists
 			File transferedFile = new File(saveLocation);
 			
 			if (transferedFile.exists() == false)
 				transferedFile.createNewFile();
 			
+			// create the input / output streams
 	        InputStream input = fileTransferClient.getInputStream();;
 	        OutputStream fileOutput = new FileOutputStream(saveLocation);
 
+	        // receive the file
 	        byte[] buffer = new byte[4096];
 	        int bytes;
 	        
 	        while ((bytes = input.read(buffer)) > 0)
 	        	fileOutput.write(buffer, 0, bytes);
 
+	        // close the streams
 	        fileOutput.close();
 	        input.close();
 	        fileTransferSocket.close();
@@ -365,17 +378,21 @@ public class Networking {
 		
 		public void sendFile(String fileLocation, String address, int port) throws IOException 
 		{
+			// create the socket to send the file from
 			Socket fileSocket = new Socket(address, port);
 			
+			// create the input / output streams
 	        InputStream file = new FileInputStream(new File(fileLocation));
 	        OutputStream outputStream = fileSocket.getOutputStream();
 	        
+	        // send the file
 	        byte[] buffer = new byte[4096];
 	        int bytes;
 	        
 	        while ((bytes = file.read(buffer)) > 0)
 	        	outputStream.write(buffer, 0, bytes);
 
+	        // close the streams
 	        outputStream.close();
 	        file.close();
 	        fileSocket.close();
@@ -389,7 +406,7 @@ public class Networking {
 				{
 					Constants constants = new Constants();
 					
-					outputStream.println(constants.DISCONNECT_INSTRUCTION);
+					outputStream.println(constants.COMMAND_START + constants.DISCONNECT_INSTRUCTION);
 					clientSocket.close();
 					connected = false;	
 				} 
@@ -419,6 +436,6 @@ public class Networking {
 		JList<String> usernameList;
 		
 		private boolean connected = false;
-		private final char instructionparameterSeperator = '@';
+		private final char instructionparameterSeperator = '|';
 	}
 }

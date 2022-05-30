@@ -8,7 +8,8 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class Prompts {
+public class Prompts 
+{
 	public String selectFile(String startingDirectory) 
 	{
 		JFileChooser fileDialog = new JFileChooser();
