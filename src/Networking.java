@@ -7,8 +7,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import javax.swing.*;
 
@@ -307,7 +309,18 @@ public class Networking
 		
 		public String getLocalAddress() 
 		{
-			return clientSocket.getLocalAddress().toString().substring(1);
+			InetAddress IP;
+			
+			try 
+			{
+				IP = InetAddress.getLocalHost();
+				return IP.toString();
+			} 
+			catch (UnknownHostException getIPError) 
+			{
+				getIPError.printStackTrace();
+				return null;
+			}
 		}
 		
 		public void sendMessage(String message) throws IOException 
@@ -366,6 +379,7 @@ public class Networking
 	        byte[] buffer = new byte[4096];
 	        int bytes;
 	        
+	        // save the data
 	        while ((bytes = input.read(buffer)) > 0)
 	        	fileOutput.write(buffer, 0, bytes);
 

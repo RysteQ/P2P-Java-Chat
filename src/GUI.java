@@ -494,8 +494,6 @@ public class GUI implements ActionListener
 					}
 			
 					hostButton.removeActionListener(this);
-					usernameTextField.enable(false);
-					IPTextField.enable(false);
 
 					clientConnection.setUsernameListModel(IPList);
 					hostOrClient = "CLIENT";
@@ -518,7 +516,6 @@ public class GUI implements ActionListener
 									clientConnection.sendMessage(" ");
 									receivedMessage = clientConnection.receiveMessage();
 
-									// check if the response is blank
 									if (receivedMessage.isBlank() == true)
 										continue;
 										
@@ -529,24 +526,20 @@ public class GUI implements ActionListener
 										String command = receivedMessage.split("[|]")[0];
 											
 										if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
-											clientConnection.leave();
-													
-										if (receivedMessage.equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
 										{
-											Constants consts = new Constants();
-												
-											receivedMessage = clientConnection.receiveMessage();
-														
+											clientConnection.leave();	
+										} 
+										else if (receivedMessage.split("[|]")[0].equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
+										{
+											JOptionPane.showMessageDialog(null, "New user connected", "Information", JOptionPane.INFORMATION_MESSAGE);
+											
 											IPListModel.clear();
-															
-											while (receivedMessage.equals(constants.COMMAND_START + constants.END_USERNAME_CHANGE_INSTRUCTION) == false) 
+											
+											for (int index = 1; index < receivedMessage.split("[|]").length; index++) 
 											{
-												if (receivedMessage.charAt(0) == consts.COMMAND_START)
-													IPListModel.addElement(receivedMessage.substring(1));
-													
-												receivedMessage = clientConnection.receiveMessage();
+												IPListModel.addElement(receivedMessage.split("[|]")[index]);
 											}
-														
+											
 											IPList.setModel(IPListModel);
 										} 
 										else if (command.equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
@@ -650,9 +643,6 @@ public class GUI implements ActionListener
 			hostConnection = new Networking.host(port);
 			
 			connectButton.removeActionListener(this);
-			usernameTextField.enable(false);
-			IPTextField.enable(false);
-			portTextField.enable(false);
 			
 			new Thread(new Runnable() 
 			{
@@ -660,29 +650,31 @@ public class GUI implements ActionListener
 				{
 					Constants constants = new Constants();
 					
-					String[] usernames = hostConnection.getUsarnames();
+					String[] usernameList = hostConnection.getUsarnames();
+					String usernames = "";
 					
 					while (true) 
 					{
 						hostConnection.bind(true);
 
-						// broadcast the new username list
-						hostConnection.broadcastMessage(constants.COMMAND_START + constants.START_USERNAME_CHANGE_INSTRUCTION);
-						
-						for (int i = 0; i < constants.MAXIMUM_CLIENTS; i++)
-							if (hostConnection.isSlotAvailable(i) == false)
-								hostConnection.broadcastMessage(constants.COMMAND_START + usernames[i]);
-						
-						hostConnection.broadcastMessage(constants.COMMAND_START + constants.END_USERNAME_CHANGE_INSTRUCTION);
-
-						// update the username list
+						// update / broadcast the username list
 						IPListModel.clear();
 						
-						for (int i = 0; i < constants.MAXIMUM_CLIENTS; i++)
-							if (hostConnection.isSlotAvailable(i) == false)
-								IPListModel.addElement(usernames[i]);
+						for (int i = 0; i < constants.MAXIMUM_CLIENTS; i++) 
+						{
+							if (hostConnection.isSlotAvailable(i) == false) 
+							{
+								IPListModel.addElement(usernameList[i]);
+								usernames += usernameList[i] + "|";	
+							}
+						}
 						
+						usernames = usernames.substring(0, usernames.length() - 1);
+						
+						hostConnection.broadcastMessage(constants.COMMAND_START + constants.START_USERNAME_CHANGE_INSTRUCTION + "|" + usernames);
 						IPList.setModel(IPListModel);
+						
+						usernames = "";
 					}
 				}
 			}).start();
@@ -709,7 +701,7 @@ public class GUI implements ActionListener
 							continue;
 						
 						if (receivedMessage.charAt(0) == constants.COMMAND_START) 
-						{							
+						{
 							receivedMessage = receivedMessage.substring(1);
 							
 							if (receivedMessage.split("[|]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
@@ -721,7 +713,7 @@ public class GUI implements ActionListener
 									String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + stringManipulator.getLastWord(receivedMessage, charactersToSplit);
 										
 									hostConnection.receiveFile(saveLocation, receivedMessage.split("[|]")[2], constants.FILE_TRANSFER_PORT);
-									hostConnection.individualMessage(receivedMessage.split("[|]")[1], receivedMessage.split("[|]")[0] + "|" + receivedMessage.split("[|]")[2] + "|" + filename);
+									hostConnection.individualMessage(receivedMessage.split("[|]")[1], constants.COMMAND_START + constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION + "|" + receivedMessage.split("[|]")[2] + "|" + filename);
 									
 									sendFile = true;
 								} 
@@ -842,7 +834,6 @@ public class GUI implements ActionListener
 						{
 							Constants consts = new Constants();
 							String opponentResponse = null;
-							String opponentIP = "";
 							
 							String[] arguments = 
 							{
@@ -1027,7 +1018,7 @@ public class GUI implements ActionListener
 	
 	private JLabel IPlabel = new JLabel("IP List");
 	private JLabel portLabel = new JLabel("");
-	
+
 	private DefaultListModel<String> listModel = new DefaultListModel<String>();
 	
 	private Color lightTextColor = new Color(0xbebebe);
