@@ -54,7 +54,12 @@ public class GUI implements ActionListener
 
 		ImageIcon P2Picon = new ImageIcon(this.getClass().getResource("/P2P.png"));
 		mainForm.setIconImage(P2Picon.getImage());
-		mainForm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		mainForm.addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(WindowEvent event) {
+		        exitProcedure();
+		    }
+		});
 	}
 
 	// Initialize all JPanels
@@ -290,7 +295,8 @@ public class GUI implements ActionListener
 	        	if (writeMessagePane.getText().equals(" Write Something")) 
 	        	{
 	        		writeMessagePane.setForeground(Color.BLACK);
-				writeMessagePane.setText("");
+	        		writeMessagePane.setText("");
+	        		
 	        	}
 	        }
 
@@ -981,6 +987,11 @@ public class GUI implements ActionListener
 		{
 			writeMessagePane.setForeground(foregroundColour);
 		}
+	}
+	
+	public void exitProcedure() {
+		//############################ Here you can put the function you want before closing  ################################
+		mainForm.dispose();
 	}
 	
 	// -= Private GUI Elements =-
