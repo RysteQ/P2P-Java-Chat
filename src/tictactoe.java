@@ -1,8 +1,10 @@
 import javax.swing.JFrame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
-
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import java.awt.Color;
@@ -13,7 +15,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-
 import java.awt.Font;
 
 public class tictactoe implements ActionListener
@@ -224,8 +225,14 @@ public class tictactoe implements ActionListener
 		frmTicTacToe.setIconImage(ticTacToeIcon.getImage());
 		frmTicTacToe.getContentPane().setBackground(Color.LIGHT_GRAY);
 		frmTicTacToe.setBounds(100, 100, 450, 300);
-		frmTicTacToe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frmTicTacToe.getContentPane().setLayout(null);
+		frmTicTacToe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		frmTicTacToe.addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(WindowEvent event) {
+		        exitProcedure();
+		    }
+		});
 		
 		for(int i = 0; i < table.length; i++)
 			for(int j = 0; j < table.length; j++)
@@ -657,7 +664,12 @@ public class tictactoe implements ActionListener
 		}
 		
 		reset();
-	}	
+	}
+	
+	public void exitProcedure() {
+		//############################ Here you can put the function you want before closing  ################################
+		frmTicTacToe.dispose();
+	}
 	
 	private JPanel playPanel = new JPanel();
 	private JPanel infoPanel = new JPanel();
