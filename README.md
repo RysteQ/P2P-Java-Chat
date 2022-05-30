@@ -20,8 +20,9 @@ Current features:
 - [ ] Encryption
 - [x] File sharing
 - [x] Team groups
-- [ ] A simple game
+- [x] A simple game
 - [ ] Voice chat
+- [ ] Voice messages
 - [ ] Kick instruction
 
 <br>
