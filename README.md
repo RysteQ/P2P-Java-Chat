@@ -24,6 +24,7 @@ Current features:
 - [ ] Voice chat
 - [ ] Voice messages
 - [ ] Kick instruction
+- [ ] Leave instruction
 
 <br>
 
