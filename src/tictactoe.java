@@ -669,6 +669,7 @@ public class tictactoe implements ActionListener
 	public void exitProcedure() {
 		//############################ Here you can put the function you want before closing  ################################
 		frmTicTacToe.dispose();
+		System.exit(0);
 	}
 	
 	private JPanel playPanel = new JPanel();
