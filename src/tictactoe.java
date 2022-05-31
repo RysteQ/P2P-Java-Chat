@@ -608,7 +608,7 @@ public class tictactoe implements ActionListener
 		}
 		
 		// diagonal check
-		if ((table[0][0].equals(table[1][1]) && table[0][0].equals(table[2][2])) || table[0][2].equals(table[1][1]) && table[0][0].equals(table[2][0]))
+		if ((table[0][0].equals(table[1][1]) && table[0][0].equals(table[2][2])) || table[0][2].equals(table[1][1]) && table[0][2].equals(table[2][0]))
 		{
 			if (table[1][1].equals("X"))
 			{
