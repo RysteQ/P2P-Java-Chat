@@ -160,38 +160,54 @@ public class GUI implements ActionListener
 		playButton.setBounds(0, 355, controlPanelWidth, 40);
 		connectButton.setBounds(0, 75, controlPanelWidth, 30);
 		hostButton.setBounds(0, 110, controlPanelWidth, 30);
+		kickButton.setBounds(0, 170, controlPanelWidth, 30);
+		leaveButton.setBounds(0, 205, controlPanelWidth, 30);
+		
 		
 		voiceMessageButton.setBackground(Color.WHITE);
 		uploadFileButton.setBackground(Color.WHITE);
 		playButton.setBackground(Color.WHITE);
 		connectButton.setBackground(Color.WHITE);
 		hostButton.setBackground(Color.WHITE);
+		kickButton.setBackground(Color.WHITE);
+		leaveButton.setBackground(Color.WHITE);
 
-		voiceMessageButton.setFont(new Font("Tahoma", Font.PLAIN, 25));
+		voiceMessageButton.setFont(new Font("Arial", Font.BOLD, 25));
 		uploadFileButton.setFont(new Font("Arial", Font.BOLD, 12));
 		playButton.setFont(new Font("Arial", Font.BOLD, 25));
 		connectButton.setFont(new Font("Arial", Font.BOLD, 25));
 		hostButton.setFont(new Font("Arial", Font.BOLD, 25));
+		kickButton.setFont(new Font("Arial", Font.BOLD, 25));
+		leaveButton.setFont(new Font("Arial", Font.BOLD, 25));
 
 		ImageIcon micIcon = new ImageIcon(this.getClass().getResource("/microphone.png"));
+		voiceMessageButton.setIcon(micIcon);
 
 		controlsPanel.add(voiceMessageButton);
 		controlsPanel.add(uploadFileButton);
 		controlsPanel.add(playButton);
 		controlsPanel.add(connectButton);
 		controlsPanel.add(hostButton);
+		controlsPanel.add(kickButton);                        
+		controlsPanel.add(leaveButton);
+		
+		kickButton.setVisible(false);
+		leaveButton.setVisible(false);
 
 		voiceMessageButton.addActionListener(this);
 		uploadFileButton.addActionListener(this);
 		playButton.setFocusPainted(false);
 		connectButton.addActionListener(this);
 		hostButton.addActionListener(this);
-
+		kickButton.addActionListener(this);
+		leaveButton.addActionListener(this);
 		playButton.addActionListener(this);
+		
 		connectButton.setFocusPainted(false);
-		voiceMessageButton.setIcon(micIcon);
 		voiceMessageButton.setFocusPainted(false);
 		uploadFileButton.setFocusPainted(false);
+		kickButton.setFocusPainted(false);
+		leaveButton.setFocusPainted(false);
 	}
 
 	// Initialize TextBoxes
@@ -238,7 +254,7 @@ public class GUI implements ActionListener
 		portLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		
 		IPlabel.setBounds(10, 11, 105, 19);
-		portLabel.setBounds(0, 260, 85, 20);
+		portLabel.setBounds(40, 145, 85, 20);
 		
 		ImageIcon IPicon = new ImageIcon(this.getClass().getResource("/ip-address.png"));
 		IPlabel.setIcon(IPicon);
@@ -253,7 +269,7 @@ public class GUI implements ActionListener
 		enableEncryption.setHorizontalAlignment(SwingConstants.CENTER);
 		enableEncryption.setFont(new Font("Arial", Font.PLAIN, 18));
 		enableEncryption.setBackground(Color.WHITE);
-		enableEncryption.setBounds(15, 190, 125, 23);
+		enableEncryption.setBounds(15, 240, 125, 23);
 		enableEncryption.setFocusPainted(false);
 		enableEncryption.setSelected(true);
 		controlsPanel.add(enableEncryption);
@@ -264,7 +280,7 @@ public class GUI implements ActionListener
 	{
 		Theme.setModel(new DefaultComboBoxModel<String>(new String[] {"Light Theme", "Dark Theme"}));
 		Theme.setFont(new Font("Arial", Font.PLAIN, 18));
-		Theme.setBounds(0, 145, controlPanelWidth, 25);
+		Theme.setBounds(0, 270, controlPanelWidth, 25);
 		Theme.setSelectedIndex(0);
 		
 		Theme.setBackground(Color.WHITE);
@@ -498,6 +514,7 @@ public class GUI implements ActionListener
 		// create a new thread to start the client connection
 		if (e.getSource() == connectButton) 
 		{
+			leaveButton.setVisible(true);
 			if (usernameTextField.getText().equals("Enter username") == false && Verifiers.validIP(IPTextField.getText()) && Verifiers.validPort(Integer.parseInt(portTextField.getText()))) 
 			{
 				try 
@@ -670,6 +687,10 @@ public class GUI implements ActionListener
 		// initialize host connection
 		if (e.getSource() == hostButton)
 		{
+			kickButton.setVisible(true);
+			leaveButton.setVisible(true);
+			hostButton.setEnabled(false);
+			
 			int port = new Random().nextInt(60000) + 1000;
 			
 			hostConnection = new Networking.host(port);
@@ -838,6 +859,7 @@ public class GUI implements ActionListener
 			
 			hostOrClient = "HOST";
 			
+			
 			JOptionPane.showMessageDialog(null, "Now listening at port " + port, "Information", JOptionPane.INFORMATION_MESSAGE);
 		}
 		
@@ -963,6 +985,17 @@ public class GUI implements ActionListener
 				}
 			}
 		}
+		if(e.getSource() == leaveButton) {
+			leaveButton.setVisible(false);
+			kickButton.setVisible(false);
+			hostButton.setEnabled(true);
+			//Here it needs the actual leave part of the button
+		}
+		if(e.getSource() == kickButton) {
+			//leaveButton.setVisible(false);																							These should be executed only if the user is the host
+			//JOptionPane.showMessageDialog(null, "You succesfully kicked someone", "Information", JOptionPane.INFORMATION_MESSAGE);
+			System.out.println("Kicked");
+		}
 	}
 
 	public void changeBackground(Color backgroundColour, Color foregroundColour) {
@@ -976,6 +1009,7 @@ public class GUI implements ActionListener
 		Theme.setBackground(backgroundColour);
 
 		IPlabel.setForeground(foregroundColour);
+		portLabel.setForeground(foregroundColour);
 		enableEncryption.setForeground(foregroundColour);
 			
 		voiceMessageButton.setForeground(foregroundColour);
@@ -983,6 +1017,8 @@ public class GUI implements ActionListener
 		playButton.setForeground(foregroundColour);
 		connectButton.setForeground(foregroundColour);
 		hostButton.setForeground(foregroundColour);
+		kickButton.setForeground(foregroundColour);
+		leaveButton.setForeground(foregroundColour);
 
 		IPList.setForeground(foregroundColour);
 		IPList.setBackground(backgroundColour);
@@ -992,6 +1028,8 @@ public class GUI implements ActionListener
 		playButton.setBackground(backgroundColour);
 		connectButton.setBackground(backgroundColour);
 		hostButton.setBackground(backgroundColour);
+		kickButton.setBackground(backgroundColour);
+		leaveButton.setBackground(backgroundColour);
 
 		Theme.setBackground(backgroundColour);
 		Theme.setForeground(foregroundColour);
@@ -1022,6 +1060,8 @@ public class GUI implements ActionListener
 	private JButton playButton = new JButton("Play");
 	private JButton connectButton = new JButton("Connect");
 	private JButton hostButton = new JButton("Host");
+	private JButton kickButton = new JButton("Kick");
+	private JButton leaveButton = new JButton("Leave");
 	
 	private JPanel textFieldPanel = new JPanel();
 	private JPanel IPpanel = new JPanel();
