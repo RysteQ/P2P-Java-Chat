@@ -23,8 +23,8 @@ Current features:
 - [x] A simple game
 - [ ] Voice chat
 - [ ] Voice messages
-- [ ] Kick instruction
-- [ ] Leave instruction
+- [x] Kick instruction
+- [x] Leave instruction
 
 <br>
 
