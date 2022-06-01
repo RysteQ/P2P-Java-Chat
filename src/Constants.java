@@ -18,6 +18,7 @@ public class Constants
 	public final String ASK_FILE_TRANSFER_APPROVAL_DECLINED_INSTRUCTION = "SEND_FILE_DECLINED";
 	public final String KICK_INSTRUCTION = "KICK";
 	public final String CLOSING_HOST = "CLOSING";
+	public final String NEW_USER = "NEW_USER";
 	
 	public final String ASK_GAME = "ASK_GAME_START";
 	public final String GAME_ACCEPTED = "GAME_ACCEPTED";

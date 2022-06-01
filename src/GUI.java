@@ -60,31 +60,7 @@ public class GUI implements ActionListener
 		    @Override
 		    public void windowClosing(WindowEvent event) 
 		    {
-		        if (hostOrClient.equals("HOST"))
-		        {
-		        	Constants consts = new Constants();
-		        	
-		        	for (int i = 0; i < consts.MAXIMUM_CLIENTS; i++) 
-		        	{
-		        		hostConnection.close(i);
-		        	}
-		        } 
-		        else if (hostOrClient.equals("CLIENT"))
-		        {
-		        	if (clientConnection.isConnected()) 
-		        	{
-			        	try 
-			        	{
-							clientConnection.leave();
-						} 
-			        	catch (IOException leaveError) 
-			        	{
-							leaveError.printStackTrace();
-						}
-		        	}
-		        }
-		        
-		        mainForm.dispose();
+		        closeApplication();
 		    }
 		});
 	}
@@ -160,9 +136,8 @@ public class GUI implements ActionListener
 		playButton.setBounds(0, 355, controlPanelWidth, 40);
 		connectButton.setBounds(0, 75, controlPanelWidth, 30);
 		hostButton.setBounds(0, 110, controlPanelWidth, 30);
-		kickButton.setBounds(0, 170, controlPanelWidth, 30);
-		leaveButton.setBounds(0, 205, controlPanelWidth, 30);
-		
+		kickButton.setBounds(0, 230, controlPanelWidth, 30);
+		leaveButton.setBounds(0, 270, controlPanelWidth, 30);
 		
 		voiceMessageButton.setBackground(Color.WHITE);
 		uploadFileButton.setBackground(Color.WHITE);
@@ -244,7 +219,6 @@ public class GUI implements ActionListener
 		portTextField.setColumns(0);
 	}
 	
-	// Initialize Labels
 	private void initLabels() 
 	{
 		IPlabel.setFont(new Font("Arial", Font.BOLD, 21));
@@ -254,7 +228,7 @@ public class GUI implements ActionListener
 		portLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		
 		IPlabel.setBounds(10, 11, 105, 19);
-		portLabel.setBounds(40, 145, 85, 20);
+		portLabel.setBounds(40, 315, 85, 20);
 		
 		ImageIcon IPicon = new ImageIcon(this.getClass().getResource("/ip-address.png"));
 		IPlabel.setIcon(IPicon);
@@ -269,7 +243,7 @@ public class GUI implements ActionListener
 		enableEncryption.setHorizontalAlignment(SwingConstants.CENTER);
 		enableEncryption.setFont(new Font("Arial", Font.PLAIN, 18));
 		enableEncryption.setBackground(Color.WHITE);
-		enableEncryption.setBounds(15, 240, 125, 23);
+		enableEncryption.setBounds(15, 175, 125, 23);
 		enableEncryption.setFocusPainted(false);
 		enableEncryption.setSelected(true);
 		controlsPanel.add(enableEncryption);
@@ -280,7 +254,7 @@ public class GUI implements ActionListener
 	{
 		Theme.setModel(new DefaultComboBoxModel<String>(new String[] {"Light Theme", "Dark Theme"}));
 		Theme.setFont(new Font("Arial", Font.PLAIN, 18));
-		Theme.setBounds(0, 270, controlPanelWidth, 25);
+		Theme.setBounds(0, 145, controlPanelWidth, 25);
 		Theme.setSelectedIndex(0);
 		
 		Theme.setBackground(Color.WHITE);
@@ -513,8 +487,7 @@ public class GUI implements ActionListener
 	{	
 		// create a new thread to start the client connection
 		if (e.getSource() == connectButton) 
-		{
-			leaveButton.setVisible(true);
+		{;
 			if (usernameTextField.getText().equals("Enter username") == false && Verifiers.validIP(IPTextField.getText()) && Verifiers.validPort(Integer.parseInt(portTextField.getText()))) 
 			{
 				try 
@@ -532,11 +505,12 @@ public class GUI implements ActionListener
 					{ 
 						clientConnection.sendMessage(usernameTextField.getText());
 					} 
-					catch (IOException e1) 
+					catch (IOException sendMessageError) 
 					{
-						e1.printStackTrace();
+						sendMessageError.printStackTrace();
 					}
-			
+		
+					leaveButton.setVisible(true);
 					hostButton.removeActionListener(this);
 
 					clientConnection.setUsernameListModel(IPList);
@@ -552,7 +526,7 @@ public class GUI implements ActionListener
 							Prompts prompt = new Prompts();
 							String receivedMessage;
 										
-							while (clientConnection.isConnected()) 
+							while (clientConnection.isConnected() && running) 
 							{
 								try 
 								{
@@ -571,15 +545,25 @@ public class GUI implements ActionListener
 											
 										if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
 										{
-											clientConnection.leave();	
+											clientConnection.leave();
+											
+											JOptionPane.showMessageDialog(null, "You have been kicked from the chatroom", "Information", JOptionPane.INFORMATION_MESSAGE);	
 										} 
 										else if (receivedMessage.split("[|]")[0].equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
 										{
-											JOptionPane.showMessageDialog(null, "New user connected", "Information", JOptionPane.INFORMATION_MESSAGE);
+											Constants consts = new Constants();
+											System.out.println(receivedMessage);
+											if (receivedMessage.split("[|]")[1].equals(consts.NEW_USER)) 
+											{
+												JOptionPane.showMessageDialog(null, "New user connected", "Information", JOptionPane.INFORMATION_MESSAGE);
+											} else 
+											{
+												JOptionPane.showMessageDialog(null, "A user was kicked", "Information", JOptionPane.INFORMATION_MESSAGE);
+											}
 											
 											IPListModel.clear();
 											
-											for (int index = 1; index < receivedMessage.split("[|]").length; index++) 
+											for (int index = 2; index < receivedMessage.split("[|]").length; index++) 
 											{
 												IPListModel.addElement(receivedMessage.split("[|]")[index]);
 											}
@@ -687,6 +671,7 @@ public class GUI implements ActionListener
 		// initialize host connection
 		if (e.getSource() == hostButton)
 		{
+			leaveButton.setText("Stop");
 			kickButton.setVisible(true);
 			leaveButton.setVisible(true);
 			hostButton.setEnabled(false);
@@ -701,33 +686,17 @@ public class GUI implements ActionListener
 			{
 				public void run() 
 				{
-					Constants constants = new Constants();
+					boolean banned = false;
 					
-					String[] usernameList = hostConnection.getUsarnames();
-					String usernames = "";
-					
-					while (true) 
+					while (true && running) 
 					{
 						hostConnection.bind(true);
-
-						// update / broadcast the username list
-						IPListModel.clear();
+						banned = checkIfBanned();
 						
-						for (int i = 0; i < constants.MAXIMUM_CLIENTS; i++) 
+						if (banned == false) 
 						{
-							if (hostConnection.isSlotAvailable(i) == false) 
-							{
-								IPListModel.addElement(usernameList[i]);
-								usernames += usernameList[i] + "|";	
-							}
+							broadcastUsernames(true);	
 						}
-						
-						usernames = usernames.substring(0, usernames.length() - 1);
-						
-						hostConnection.broadcastMessage(constants.COMMAND_START + constants.START_USERNAME_CHANGE_INSTRUCTION + "|" + usernames);
-						IPList.setModel(IPListModel);
-						
-						usernames = "";
 					}
 				}
 			}).start();
@@ -740,7 +709,7 @@ public class GUI implements ActionListener
 					String filename = "";
 					boolean sendFile = false;
 					
-					while (true) 
+					while (true && running) 
 					{
 						hostConnection.broadcastMessage(" ");
 						portLabel.setText("Port: " + String.valueOf(port + hostConnection.getPortOffset()));
@@ -843,6 +812,12 @@ public class GUI implements ActionListener
 								{
 									individualMessageError.printStackTrace();
 								}
+							} else if (receivedMessage.split("[|]")[0].equals(constants.DISCONNECT_INSTRUCTION)) 
+							{
+								String username = receivedMessage.split("[|]")[1];
+								
+								hostConnection.close(username);
+								broadcastUsernames(false);
 							}
 						} 
 						else 
@@ -866,11 +841,14 @@ public class GUI implements ActionListener
 
 		if(e.getSource() == Theme) 
 		{
-			if(Theme.getSelectedIndex() == 0)
-				changeBackground(Color.WHITE, Color.BLACK);
-			
-			if(Theme.getSelectedIndex() == 1)
+			if(Theme.getSelectedIndex() == 0) 
+			{
+				changeBackground(Color.WHITE, Color.BLACK);	
+			}
+			else if(Theme.getSelectedIndex() == 1) 
+			{
 				changeBackground(darkerBG, lightTextColor);
+			}
 		}
 		
 		if(e.getSource() == playButton) 
@@ -907,7 +885,7 @@ public class GUI implements ActionListener
 									opponentResponse = clientConnection.receiveMessage();
 									opponentResponse = opponentResponse.substring(1);
 								} 
-								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false);
+								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
 								
 								if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
 								{
@@ -950,7 +928,7 @@ public class GUI implements ActionListener
 
 								do 
 								{
-									while (opponentResponse == null) 
+									while (opponentResponse == null && running) 
 									{
 										opponentResponse = hostConnection.receiveMessages();
 									}
@@ -962,7 +940,7 @@ public class GUI implements ActionListener
 									
 									opponentResponse = opponentResponse.substring(1);
 								} 
-								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false);
+								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
 							} 
 							catch (IOException error) 
 							{
@@ -985,20 +963,80 @@ public class GUI implements ActionListener
 				}
 			}
 		}
-		if(e.getSource() == leaveButton) {
+		
+		if(e.getSource() == leaveButton) 
+		{			
+			if (hostOrClient.equals("HOST")) 
+			{
+				hostConnection.closeAll();
+			} 
+			else if (hostOrClient.equals("CLIENT")) 
+			{
+				Constants consts = new Constants();
+				
+				try 
+				{
+					clientConnection.sendMessage(consts.COMMAND_START + consts.DISCONNECT_INSTRUCTION + "|" + usernameTextField.getText());
+					clientConnection.leave();
+				} 
+				catch (IOException leaveError) 
+				{
+					leaveError.printStackTrace();
+				}
+			}
+			
 			leaveButton.setVisible(false);
 			kickButton.setVisible(false);
 			hostButton.setEnabled(true);
-			//Here it needs the actual leave part of the button
+			
+			IPListModel.clear();
+			
+			portTextField.setText("Port");
+			IPTextField.setText("IP to connect to");
+			usernameTextField.setText("Enter username");
+			writeMessagePane.setText(" Write Something");
+			
+			hostOrClient = null;
 		}
-		if(e.getSource() == kickButton) {
-			//leaveButton.setVisible(false);																							These should be executed only if the user is the host
-			//JOptionPane.showMessageDialog(null, "You succesfully kicked someone", "Information", JOptionPane.INFORMATION_MESSAGE);
-			System.out.println("Kicked");
+		
+		if(e.getSource() == kickButton) 
+		{
+			if (hostOrClient.equals("HOST") == false)
+				return;
+			
+			if (IPList.getSelectedIndex() != -1) 
+			{
+				Constants consts = new Constants();
+				String username;
+				
+				username = IPList.getSelectedValue();
+				
+				try 
+				{
+					hostConnection.individualMessage(username, consts.COMMAND_START + consts.KICK_INSTRUCTION);
+					hostConnection.kickClient(username);
+				} 
+				catch (IOException sendKickInstructionError) 
+				{
+					sendKickInstructionError.printStackTrace();
+				}
+				
+				
+				bannedUsernames.put(username, username);
+				broadcastUsernames(false);
+				
+				new Thread(new Runnable() 
+				{
+					public void run() 
+					{
+						JOptionPane.showMessageDialog(null, "Kicked user " + username, "Information", JOptionPane.INFORMATION_MESSAGE);
+					}
+				}).start();
+			}
 		}
 	}
 
-	public void changeBackground(Color backgroundColour, Color foregroundColour) {
+	private void changeBackground(Color backgroundColour, Color foregroundColour) {
 		mainForm.getContentPane().setBackground(backgroundColour);
 		textFieldPanel.setBackground(backgroundColour);
 		IPpanel.setBackground(backgroundColour);
@@ -1052,6 +1090,84 @@ public class GUI implements ActionListener
 		}
 	}
 	
+	private void closeApplication() 
+	{
+		if (hostOrClient.equals("HOST"))
+        {
+        	hostConnection.closeAll();
+        } 
+        else if (hostOrClient.equals("CLIENT"))
+        {
+        	if (clientConnection.isConnected()) 
+        	{
+	        	try 
+	        	{
+					clientConnection.leave();
+				} 
+	        	catch (IOException leaveError) 
+	        	{
+					leaveError.printStackTrace();
+				}
+        	}
+        }
+
+		running = false;
+		
+        mainForm.dispose();
+	}
+	
+	private void broadcastUsernames(boolean newClient)
+	{
+		Constants constants = new Constants();
+		
+		String[] usernameList = hostConnection.getUsarnames();
+		String usernames = "";
+		
+		if (newClient) 
+		{
+			usernames += constants.NEW_USER + "|";
+		} else 
+		{
+			usernames += "BANNED" + "|";
+		}
+		
+		IPListModel.clear();
+		
+		for (int i = 0; i < constants.MAXIMUM_CLIENTS; i++) 
+		{
+			if (usernameList[i] != null) 
+			{
+				IPListModel.addElement(usernameList[i]);
+				usernames += usernameList[i] + "|";	
+			}
+		}
+		
+		usernames = usernames.substring(0, usernames.length() - 1);
+		
+		hostConnection.broadcastMessage(constants.COMMAND_START + constants.START_USERNAME_CHANGE_INSTRUCTION + "|" + usernames);
+		IPList.setModel(IPListModel);
+		
+		usernames = "";	
+	}
+	
+	private boolean checkIfBanned() 
+	{
+		// TODO GET USERNAMES AND CHECK IF THE USERNAME IN QUESTION IS BANNED OR NOT
+		String[] usernameList = hostConnection.getUsarnames();
+		
+		for (int index = 0; index < usernameList.length; index++) 
+		{
+			if (bannedUsernames.get(usernameList[index]) != null) 
+			{
+				hostConnection.kickClient(usernameList[index]);
+				
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	// -= Private GUI Elements =-
 	private JFrame mainForm = new JFrame();
 	
@@ -1092,6 +1208,9 @@ public class GUI implements ActionListener
 	
 	private Color lightTextColor = new Color(0xbebebe);
 	private Color darkerBG = new Color(0x252526);
+	
+	private Map<String, String> bannedUsernames = new HashMap<String, String>();
+	private boolean running = true;
 	
 	// -= Networking =-
 	private Networking.client clientConnection;

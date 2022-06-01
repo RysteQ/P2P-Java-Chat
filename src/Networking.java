@@ -48,7 +48,7 @@ public class Networking
 						
 					portOffset++;
 					
-					changeAvailableSlotStatus(availableSlot, false, clientSocket[availableSlot]);
+					changeAvailableSlotStatus(availableSlot, false);
 				}
 			} 
 			catch (IOException e) 
@@ -98,14 +98,16 @@ public class Networking
 					if (availableSlots[index] == false) 
 					{
 						receivedMessage = inputStream[index].readLine();
-							
-						if (receivedMessage.isBlank() == false)
-							return receivedMessage;	
+						
+						if (receivedMessage.isBlank() == false && receivedMessage != null) 
+						{
+							return receivedMessage;		
+						}
 					}
 				}
-			} catch (IOException e) 
+			} catch (IOException receiveMessageError) 
 			{
-				changeAvailableSlotStatus(index, false, clientSocket[index]);
+				receiveMessageError.printStackTrace();
 			}
 
 			return null;
@@ -176,20 +178,35 @@ public class Networking
 			throw new IOException("User not found");
 		}
 
-		public void kickClient(int index) 
+		public void kickClient(String username) 
 		{
 			try 
 			{
-				changeAvailableSlotStatus(index, true, clientSocket[index]);
-				clientSocket[index].close();
+				boolean kickedUser = false;
+				
+				for (int index = 0; index < maximumClients && kickedUser == false; index++) 
+				{
+					if (usernames[index] == username) 
+					{
+						changeAvailableSlotStatus(index, true);
+						clientSocket[index].close();
+						
+						kickedUser = true;
+					}
+				}
+				
+				if (kickedUser == false) 
+				{
+					throw new IOException();
+				}
 			} 
-			catch (IOException e) 
+			catch (IOException kickError) 
 			{
-				e.printStackTrace();
+				kickError.printStackTrace();
 			}
 		}
 
-		public void close(int index) 
+		public void closeAll() 
 		{
 			try 
 			{
@@ -197,19 +214,38 @@ public class Networking
 				
 				for (int i = 0; i < maximumClients; i++) 
 				{
-					outputStream[i].println(constants.COMMAND_START + constants.CLOSING_HOST);
-					clientSocket[i].close();
+					if (availableSlots[i] == false) 
+					{
+						outputStream[i].println(constants.COMMAND_START + constants.CLOSING_HOST);
+						clientSocket[i].close();	
+					}
 				}
 				
 				serverSocket.close();
-			} catch (IOException e) 
+			} catch (IOException closeError) 
 			{
-				e.printStackTrace();
+				closeError.printStackTrace();
+			}
+		}
+		
+		public void close(String username) 
+		{
+			boolean found = false;
+			
+			for (int index = 0; index < usernames.length && found == false; index++) 
+			{
+				if (usernames[index].equals(username)) 
+				{
+					changeAvailableSlotStatus(index, true);
+					
+					found = true;
+				}
 			}
 		}
 		
 		public String getUserIP(String username) 
 		{
+			// I do not know if this works, I haven't tested it
 			for (int i = 0; i < usernames.length; i++)
 				if (usernames[i].equals(username))
 					return clientSocket[i].getLocalAddress().toString();
@@ -224,7 +260,20 @@ public class Networking
 		
 		public String[] getUsarnames() 
 		{
-			return usernames;
+			String[] toReturn = new String[maximumClients];
+			
+			for (int index = 0; index < maximumClients; index++) 
+			{
+				if (availableSlots[index] == false) 
+				{
+					toReturn[index] = usernames[index];
+				} else 
+				{
+					toReturn[index] = null;
+				}
+			}
+			
+			return toReturn;
 		}
 		
 		private short availableSlot() 
@@ -241,11 +290,8 @@ public class Networking
 			return availableSlots[slot];
 		}
 		
-		private void changeAvailableSlotStatus(int index, boolean newState, Socket clientSocket) 
+		private void changeAvailableSlotStatus(int index, boolean newState) 
 		{
-			if (newState == false)
-				IPList[index] = clientSocket.getInetAddress().toString();
-			
 			availableSlots[index] = newState;
 		}
 		
@@ -264,7 +310,6 @@ public class Networking
 		private PrintWriter[] outputStream = new PrintWriter[maximumClients];
 		private BufferedReader[] inputStream = new BufferedReader[maximumClients];
 		private boolean[] availableSlots = new boolean[maximumClients];
-		private String[] IPList = new String[maximumClients];
 		private String[] usernames = new String[maximumClients];
 		private int portNumber;
 		private int portOffset = 0;
@@ -410,23 +455,20 @@ public class Networking
 		
 		public void leave() throws IOException 
 		{
-			if (connected) 
+			if (connected == false) 
 			{
-				try 
-				{
-					Constants constants = new Constants();
-					
-					outputStream.println(constants.COMMAND_START + constants.DISCONNECT_INSTRUCTION);
-					clientSocket.close();
-					connected = false;	
-				} 
-				catch (IOException e) 
-				{
-					e.printStackTrace();
-				}	
+				throw new IOException("There is not an active connection");
 			}
-			
-			throw new IOException("There is not an active connection");
+
+			try 
+			{
+				clientSocket.close();
+				connected = false;	
+			} 
+			catch (IOException e) 
+			{
+				e.printStackTrace();
+			}	
 		}
 		
 		public boolean isConnected() 
