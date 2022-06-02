@@ -113,6 +113,7 @@ public class RecordNewMessage extends JFrame implements ActionListener {
 	private JSeparator Underline = new JSeparator();
 	private JScrollPane scrollPaneOfList = new JScrollPane();
 	private JList listOfRecords = new JList();
-	private int posX = 300;
-	private int posY = 400;
+	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	private int posX = (int) screenSize.getWidth()/2 -600;
+	private int posY = (int) screenSize.getHeight()/2 -200;
 }
