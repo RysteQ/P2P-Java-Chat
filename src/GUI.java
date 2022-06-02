@@ -25,7 +25,6 @@ public class GUI implements ActionListener
 		initLabels();
 		initRadioButons();
 		initComboBoxes();
-		
 		initButtonActions();
 		initTextboxActions();
 		initTextFieldActions();
@@ -43,6 +42,7 @@ public class GUI implements ActionListener
 		mainForm.getContentPane().setFont(new Font("Arial", Font.PLAIN, 12));
 
 		mainForm.setTitle("Simple P2P");
+		mainForm.setLocationRelativeTo(null);
 
 		mainForm.getContentPane().setLayout(null);
 		mainForm.setBounds(100, 100, 760, 500);
@@ -170,14 +170,14 @@ public class GUI implements ActionListener
 		leaveButton.setVisible(false);
 
 		voiceMessageButton.addActionListener(this);
-		uploadFileButton.addActionListener(this);
-		playButton.setFocusPainted(false);
+		uploadFileButton.addActionListener(this);	
 		connectButton.addActionListener(this);
 		hostButton.addActionListener(this);
 		kickButton.addActionListener(this);
 		leaveButton.addActionListener(this);
 		playButton.addActionListener(this);
 		
+		playButton.setFocusPainted(false);
 		connectButton.setFocusPainted(false);
 		voiceMessageButton.setFocusPainted(false);
 		uploadFileButton.setFocusPainted(false);
@@ -617,7 +617,7 @@ public class GUI implements ActionListener
 												
 												try { Thread.sleep(100); } catch (InterruptedException e) { }
 												
-												tictactoe game = new tictactoe(true, false, IPToConnectTo, constants.GAME_PORT_START);
+												TicTacToe game = new TicTacToe(true, false, IPToConnectTo, constants.GAME_PORT_START);
 												game.start();
 											} 
 											else 
@@ -855,7 +855,7 @@ public class GUI implements ActionListener
 		{
 			if (IPList.getSelectedIndex() == -1) 
 			{
-				tictactoe singleGame = new tictactoe(false, false, "NULL", 0);
+				TicTacToe singleGame = new TicTacToe(false, false, "NULL", 0);
 				singleGame.start();
 			}
 			else 
@@ -889,7 +889,7 @@ public class GUI implements ActionListener
 								
 								if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
 								{
-									tictactoe game = new tictactoe(true, true, "NULL", consts.GAME_PORT_START);
+									TicTacToe game = new TicTacToe(true, true, "NULL", consts.GAME_PORT_START);
 									game.start();
 								} 
 								else 
@@ -951,7 +951,7 @@ public class GUI implements ActionListener
 							{
 								opponentIP = hostConnection.getUserIP(IPList.getSelectedValue());
 
-								tictactoe game = new tictactoe(true, true, opponentIP, consts.GAME_PORT_START);
+								TicTacToe game = new TicTacToe(true, true, opponentIP, consts.GAME_PORT_START);
 								game.start();
 							} 
 							else 
@@ -1033,6 +1033,10 @@ public class GUI implements ActionListener
 					}
 				}).start();
 			}
+		}
+		if(e.getSource() == voiceMessageButton) {
+			record.main(null);
+			receivedMessages.main(null);
 		}
 	}
 
@@ -1217,6 +1221,9 @@ public class GUI implements ActionListener
 	private Networking.host hostConnection;
 	
 	private String hostOrClient = "NONE";
+	
+	private RecordNewMessage record = new RecordNewMessage();
+	private ReceivedVoiceMessages receivedMessages = new ReceivedVoiceMessages();
 	
 	// -= Constants =-
 	private final int controlPanelWidth = 160;
