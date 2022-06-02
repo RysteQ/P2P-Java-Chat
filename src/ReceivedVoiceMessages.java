@@ -3,7 +3,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-public class ReceivedVoiceMessages extends JFrame implements ActionListener {
+public class ReceivedVoiceMessages extends JFrame {
 
 	private JPanel frame;
 
@@ -31,7 +31,6 @@ public class ReceivedVoiceMessages extends JFrame implements ActionListener {
 	public void Initialize() {
 		initFrame();
 		initList();
-		initButtons();
 		initElse();
 	}
 	
@@ -52,20 +51,22 @@ public class ReceivedVoiceMessages extends JFrame implements ActionListener {
 	
 	public void initList() {
 		listPanel.setBackground(Color.LIGHT_GRAY);
-		listPanel.setBounds(5, 0, 175, 200);
+		listPanel.setBounds(5, 0, 175, 261);
 		listPanel.setBorder(null);
+		
 		frame.add(listPanel);
 		listPanel.setLayout(null);
 		
-		scrollPaneofList.setBounds(0, 30, 170, 170);
+		scrollPaneofList.setBounds(0, 30, 170, 225);
 		scrollPaneofList.setBorder(null);
 		listPanel.add(scrollPaneofList);
 		
 		
 		list.setBackground(Color.LIGHT_GRAY);
 		list.setBorder(null);
+		list.addMouseListener(mouseListener);
 		list.setModel(new AbstractListModel() {
-			String[] values = new String[] {};
+			String[] values = new String[] {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
 			public int getSize() {
 				return values.length;
 			}
@@ -76,15 +77,6 @@ public class ReceivedVoiceMessages extends JFrame implements ActionListener {
 		scrollPaneofList.setViewportView(list);
 	}
 	
-	public void initButtons() {
-		recordButton.setBackground(Color.WHITE);
-		recordButton.setFont(new Font("Arial", Font.BOLD, 18));
-		recordButton.setBounds(5, 205, 175, 45);
-		recordButton.setFocusPainted(false);
-		recordButton.addActionListener(this);
-		frame.add(recordButton);
-	}
-	
 	public void initElse(){
 		recivedMessagesLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		recivedMessagesLabel.setBackground(Color.LIGHT_GRAY);
@@ -92,27 +84,35 @@ public class ReceivedVoiceMessages extends JFrame implements ActionListener {
 		recivedMessagesLabel.setFont(new Font("Arial", Font.BOLD, 13));
 		listPanel.add(recivedMessagesLabel);
 		
-		
 		underline.setForeground(Color.BLACK);
 		underline.setBounds(0, 23, 175, 10);
 		listPanel.add(underline);
 	}
 	
-	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == recordButton) {
-			System.out.println("Recording new message");
-		}
-	}
+	//No idea what this does.... Found it on the internet
+	MouseListener mouseListener = new MouseAdapter() {
+	      public void mouseClicked(MouseEvent mouseEvent) {
+	        JList theList = (JList) mouseEvent.getSource();
+	        if (mouseEvent.getClickCount() == 2) {
+	          int index = theList.locationToIndex(mouseEvent.getPoint());
+	          if (index >= 0) {
+	            Object o = theList.getModel().getElementAt(index);
+	            System.out.println("Clicked on: " + o.toString());
+	          }
+	        }
+	      }
+	    };
 	
 	
-	
-	private JButton recordButton = new JButton("Listen");
 	private JPanel listPanel = new JPanel();
 	private JLabel recivedMessagesLabel = new JLabel("Received voice messages");
 	private JSeparator underline = new JSeparator();
 	private JScrollPane scrollPaneofList = new JScrollPane();
 	private JList list = new JList();
-	private int posX = 1400;
-	private int posY = 400;
+	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	private int posX = (int) screenSize.getWidth()/2 + 400;
+	private int posY = (int) screenSize.getHeight()/2 - 200;
 
+
+	
 }
