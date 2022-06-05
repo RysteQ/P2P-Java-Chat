@@ -17,19 +17,20 @@ This section will contain a list of the current features of the application, the
 Current features:
 - [x] A GUI
 - [x] Dark / Light theme
-- [ ] Encryption
+~~- [ ] Encryption~~
 - [x] File sharing
 - [x] Team groups
 - [x] A simple game
-- [ ] Voice chat
-- [ ] Voice messages
+~~- [ ] Voice chat~~
+- [x] Voice messages
 - [x] Kick instruction
 - [x] Leave instruction
 
 <br>
 
 Dropped features:
-1. None
+1. Encryption
+2. Voice chat
 
 <br>
 
