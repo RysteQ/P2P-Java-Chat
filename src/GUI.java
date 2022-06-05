@@ -941,107 +941,112 @@ public class GUI implements ActionListener
 				singleGame.start();
 			}
 			else 
-			{	
-				if (hostOrClient.equals("CLIENT")) 
-				{	
-					new Thread(new Runnable() 
-					{
-						public void run()
-						{
-							Constants consts = new Constants();
-							String opponentResponse = null;
-							
-							String[] arguments = 
-							{
-								IPList.getSelectedValue(),
-								clientConnection.getLocalAddress(),
-								usernameTextField.getText()
-							};
-							
-							try 
-							{
-								clientConnection.sendInstruction(consts.COMMAND_START + consts.ASK_GAME, arguments);
-
-								do 
-								{
-									opponentResponse = clientConnection.receiveMessage();
-									opponentResponse = opponentResponse.substring(1);
-								} 
-								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
-								
-								if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
-								{
-									TicTacToe game = new TicTacToe(true, true, "NULL", consts.GAME_PORT_START);
-									game.start();
-								} 
-								else 
-								{
-									JOptionPane.showMessageDialog(null, "Opponent declined", "Error", JOptionPane.ERROR_MESSAGE);	
-								}
-							} 
-							catch (IOException error) 
-							{
-								error.printStackTrace();
-							}
-						}
-					}).start();
-				} else if (hostOrClient.equals("HOST")) 
+			{
+				Thread hostPlayThread = new Thread(new Runnable() 
 				{
-					new Thread(new Runnable() 
+					public void run()
 					{
-						public void run()
+						Constants consts = new Constants();
+						String opponentResponse = null;
+						String opponentIP = "";
+						
+						try 
 						{
-							Constants consts = new Constants();
-							String opponentResponse = null;
-							String opponentIP = "";
-							
-							try 
-							{
-								hostConnection.individualMessage(IPList.getSelectedValue(), 
-									consts.COMMAND_START 
-									+ consts.ASK_GAME 
-									+ "|" 
-									+ "NULL"
-									+ "|" 
-									+ consts.GAME_PORT_START 
-									+ "|"
-									+ "Host"
-								);
+							hostConnection.individualMessage(IPList.getSelectedValue(), 
+								consts.COMMAND_START 
+								+ consts.ASK_GAME 
+								+ "|" 
+								+ "NULL"
+								+ "|" 
+								+ consts.GAME_PORT_START 
+								+ "|"
+								+ "Host"
+							);
 
-								do 
-								{
-									while (opponentResponse == null && running) 
-									{
-										opponentResponse = hostConnection.receiveMessages();
-									}
-									
-									hostConnection.individualMessage(IPList.getSelectedValue(), 
-										consts.COMMAND_START
-										+ consts.GAME_VERIFIED
-									);
-									
-									opponentResponse = opponentResponse.substring(1);
-								} 
-								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
-							} 
-							catch (IOException error) 
+							do 
 							{
-								error.printStackTrace();
-							}
+								while (opponentResponse == null && running) 
+								{
+									opponentResponse = hostConnection.receiveMessages();
+								}
+								
+								hostConnection.individualMessage(IPList.getSelectedValue(), 
+									consts.COMMAND_START
+									+ consts.GAME_VERIFIED
+								);
+								
+								opponentResponse = opponentResponse.substring(1);
+							} 
+							while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
+						} 
+						catch (IOException error) 
+						{
+							error.printStackTrace();
+						}
+						
+						if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
+						{
+							opponentIP = hostConnection.getUserIP(IPList.getSelectedValue());
+
+							TicTacToe game = new TicTacToe(true, true, opponentIP, consts.GAME_PORT_START);
+							game.start();
+						} 
+						else 
+						{
+							JOptionPane.showMessageDialog(null, "Opponent declined", "Error", JOptionPane.ERROR_MESSAGE);	
+						}
+					}
+				});
+				
+				Thread clientPlayThread = new Thread(new Runnable() 
+				{
+					public void run()
+					{
+						Constants consts = new Constants();
+						String opponentResponse = null;
+						
+						String[] arguments = 
+						{
+							IPList.getSelectedValue(),
+							clientConnection.getLocalAddress(),
+							usernameTextField.getText()
+						};
+						
+						try 
+						{
+							clientConnection.sendInstruction(consts.COMMAND_START + consts.ASK_GAME, arguments);
+
+							do 
+							{
+								opponentResponse = clientConnection.receiveMessage();
+								opponentResponse = opponentResponse.substring(1);
+							} 
+							while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
 							
 							if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
 							{
-								opponentIP = hostConnection.getUserIP(IPList.getSelectedValue());
-
-								TicTacToe game = new TicTacToe(true, true, opponentIP, consts.GAME_PORT_START);
+								TicTacToe game = new TicTacToe(true, true, "NULL", consts.GAME_PORT_START);
 								game.start();
 							} 
 							else 
 							{
 								JOptionPane.showMessageDialog(null, "Opponent declined", "Error", JOptionPane.ERROR_MESSAGE);	
 							}
+						} 
+						catch (IOException error) 
+						{
+							error.printStackTrace();
 						}
-					}).start();
+					}
+				});
+				
+				if (hostOrClient.equals("CLIENT")) 
+				{	
+					clientPlayThread.start();
+				} 
+				else if (hostOrClient.equals("HOST")) 
+				{
+					hostPlayThread.start();
 				}
 			}
 		}
