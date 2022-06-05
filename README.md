@@ -34,7 +34,7 @@ Dropped features:
 
 <br>
 
-## Collaborators
+## Contributors
 
 [RysteQ](https://github.com/RysteQ)
 
