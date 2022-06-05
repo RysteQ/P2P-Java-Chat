@@ -17,11 +17,9 @@ This section will contain a list of the current features of the application, the
 Current features:
 - [x] A GUI
 - [x] Dark / Light theme
-~~- [ ] Encryption~~
 - [x] File sharing
 - [x] Team groups
 - [x] A simple game
-~~- [ ] Voice chat~~
 - [x] Voice messages
 - [x] Kick instruction
 - [x] Leave instruction
