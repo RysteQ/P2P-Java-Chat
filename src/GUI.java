@@ -13,7 +13,6 @@ public class GUI implements ActionListener
 		this.mainForm = mainForm;
 	}
 	
-	// Initialize GUI
 	public void initGUI() 
 	{
 		initializeForm();
@@ -23,7 +22,6 @@ public class GUI implements ActionListener
 		initButtons();
 		initTextFields();
 		initLabels();
-		initRadioButons();
 		initComboBoxes();
 		initButtonActions();
 		initTextboxActions();
@@ -35,7 +33,6 @@ public class GUI implements ActionListener
 		mainForm.setVisible(true);
 	}
 
-	// Initialize main form
 	private void initializeForm() 
 	{
 		mainForm = new JFrame();
@@ -236,20 +233,7 @@ public class GUI implements ActionListener
 		IPpanel.add(IPlabel);
 		controlsPanel.add(portLabel);
 	}
-	
-	// Initialize RadioButtons
-	private void initRadioButons() 
-	{
-		enableEncryption.setHorizontalAlignment(SwingConstants.CENTER);
-		enableEncryption.setFont(new Font("Arial", Font.PLAIN, 18));
-		enableEncryption.setBackground(Color.WHITE);
-		enableEncryption.setBounds(15, 175, 125, 23);
-		enableEncryption.setFocusPainted(false);
-		enableEncryption.setSelected(true);
-		controlsPanel.add(enableEncryption);
-	}
 
-	// Initialize ComboBoxes
 	private void initComboBoxes() 
 	{
 		Theme.setModel(new DefaultComboBoxModel<String>(new String[] {"Light Theme", "Dark Theme"}));
@@ -270,7 +254,7 @@ public class GUI implements ActionListener
 			@Override
 			public void actionPerformed(ActionEvent e) 
 			{
-				if (IPList.getSelectedIndex() != -1) 
+				if (IPList.getSelectedIndex() != -1 && clientConnection != null) 
 				{
 					Prompts prompt = new Prompts();
 					Constants constants = new Constants();
@@ -278,6 +262,13 @@ public class GUI implements ActionListener
 					try 
 					{
 						String fileLocation = prompt.selectFile("Select");
+						
+						if (fileLocation == null) 
+						{
+							JOptionPane.showMessageDialog(null, "Error gettintg the location of the file", "Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+						
 						String[] instructionParameters = 
 						{
 								IPList.getSelectedValue().toString(),
@@ -338,6 +329,11 @@ public class GUI implements ActionListener
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) 
 				{
 					String sendMessage;
+					
+					if (messagePane.getText().charAt(0) == '@') 
+					{
+						return;
+					}
 					
 					if (hostOrClient.equals("HOST")) 
 					{
@@ -487,180 +483,214 @@ public class GUI implements ActionListener
 	{	
 		// create a new thread to start the client connection
 		if (e.getSource() == connectButton) 
-		{;
+		{
 			if (usernameTextField.getText().equals("Enter username") == false && Verifiers.validIP(IPTextField.getText()) && Verifiers.validPort(Integer.parseInt(portTextField.getText()))) 
 			{
 				try 
 				{
 					clientConnection = new Networking.client(IPTextField.getText(), Integer.parseInt(portTextField.getText()));
+				} 
+				catch (InterruptedException connectionError) 
+				{
+					JOptionPane.showMessageDialog(null, "Couldn't connect to host", "Error", JOptionPane.INFORMATION_MESSAGE);
+					connectionError.printStackTrace();
 					
-					// if the client is not connected then inform the user and exit
-					if (clientConnection.isConnected() == false)
-					{
-						JOptionPane.showMessageDialog(null, "Couldn't connect to " + IPTextField.getText(), "Error", JOptionPane.INFORMATION_MESSAGE);
-						return;
-					}
+					return;
+				}
+					
+				// if the client is not connected then inform the user and exit
+				if (clientConnection.isConnected() == false)
+				{
+					JOptionPane.showMessageDialog(null, "Couldn't connect to " + IPTextField.getText(), "Error", JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
 						
-					try 
-					{ 
-						clientConnection.sendMessage(usernameTextField.getText());
-					} 
-					catch (IOException sendMessageError) 
-					{
-						sendMessageError.printStackTrace();
-					}
+				try 
+				{ 
+					clientConnection.sendMessage(usernameTextField.getText());
+				} 
+				catch (IOException sendMessageError) 
+				{
+					sendMessageError.printStackTrace();
+				}
 		
-					leaveButton.setVisible(true);
-					hostButton.removeActionListener(this);
+				leaveButton.setVisible(true);
+				hostButton.removeActionListener(this);
 
-					clientConnection.setUsernameListModel(IPList);
-					hostOrClient = "CLIENT";
+				clientConnection.setUsernameListModel(IPList);
+				hostOrClient = "CLIENT";
 						
-					JOptionPane.showMessageDialog(null, "Connected to " + IPTextField.getText(), "Information", JOptionPane.INFORMATION_MESSAGE);	
+				JOptionPane.showMessageDialog(null, "Connected to " + IPTextField.getText(), "Information", JOptionPane.INFORMATION_MESSAGE);	
 
-					new Thread(new Runnable() 
+				new Thread(new Runnable() 
+				{
+					public void run() 
 					{
-						public void run() 
+						Constants constants = new Constants();
+						Prompts prompt = new Prompts();
+						String receivedMessage;
+										
+						while (clientConnection.isConnected() && running) 
 						{
-							Constants constants = new Constants();
-							Prompts prompt = new Prompts();
-							String receivedMessage;
-										
-							while (clientConnection.isConnected() && running) 
+							try 
 							{
-								try 
-								{
-									// send the "ping message" and receive the response
-									clientConnection.sendMessage(" ");
-									receivedMessage = clientConnection.receiveMessage();
+								// send the "ping message" and receive the response
+								clientConnection.sendMessage(" ");
+								receivedMessage = clientConnection.receiveMessage();
 
-									if (receivedMessage.isBlank() == true)
-										continue;
+								if (receivedMessage.isBlank() == true)
+									continue;
 										
-									// check if the response is a command
-									if (receivedMessage.charAt(0) == constants.COMMAND_START) 
+								// check if the response is a command
+								if (receivedMessage.charAt(0) == constants.COMMAND_START) 
+								{
+									receivedMessage = receivedMessage.substring(1, receivedMessage.length());
+									String command = receivedMessage.split("[|]")[0];
+											
+									if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
 									{
-										receivedMessage = receivedMessage.substring(1, receivedMessage.length());
-										String command = receivedMessage.split("[|]")[0];
+										clientConnection.leave();
 											
-										if (receivedMessage.equals(constants.KICK_INSTRUCTION)) 
-										{
-											clientConnection.leave();
-											
-											JOptionPane.showMessageDialog(null, "You have been kicked from the chatroom", "Information", JOptionPane.INFORMATION_MESSAGE);	
-										} 
-										else if (receivedMessage.split("[|]")[0].equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
-										{
-											Constants consts = new Constants();
-											System.out.println(receivedMessage);
-											if (receivedMessage.split("[|]")[1].equals(consts.NEW_USER)) 
-											{
-												JOptionPane.showMessageDialog(null, "New user connected", "Information", JOptionPane.INFORMATION_MESSAGE);
-											} else 
-											{
-												JOptionPane.showMessageDialog(null, "A user was kicked", "Information", JOptionPane.INFORMATION_MESSAGE);
-											}
-											
-											IPListModel.clear();
-											
-											for (int index = 2; index < receivedMessage.split("[|]").length; index++) 
-											{
-												IPListModel.addElement(receivedMessage.split("[|]")[index]);
-											}
-											
-											IPList.setModel(IPListModel);
-										} 
-										else if (command.equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
-										{
-											if (prompt.showMessageBoxChoice(mainForm, "Question", "Do you want to receive a file from the user " + receivedMessage.split("[|]")[1] + " ?")) 
-											{
-												String_Manipulator stringManipulator = new String_Manipulator();
-															
-												String[] charactersToSplit = { "|", "\\\\" };
-												String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name"));
-									
-												String[] parameters = 
-												{ 
-													clientConnection.getLocalAddress(), 
-													receivedMessage.split("[|]")[1] 
-												};
-												
-												clientConnection.sendInstruction(constants.COMMAND_START + constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION, parameters);
-															
-												// again, I have no clue on why I have to wait
-												try { Thread.sleep(1000); } catch (Exception e1) { }
-															
-												clientConnection.receiveFile(saveLocation + stringManipulator.getLastWord(receivedMessage, charactersToSplit), constants.FILE_TRANSFER_PORT);
-											}
-										} 
-										else if(command.equals(constants.ASK_GAME)) 
-										{
-											if (prompt.showMessageBoxChoice(mainForm, "Question", "Do you want to play a game with the user " + receivedMessage.split("[|]")[3] + " ?")) 
-											{
-												// over here there is probably a conflict at the host end so my solution to fix this on time is to just flood the host with
-												// the same message until it gets verified, it will probably be removed later on although I make no promises
-												while (clientConnection.receiveMessage().equals(constants.COMMAND_START + constants.GAME_VERIFIED) == false) 
-												{
-													clientConnection.sendMessage(constants.COMMAND_START + constants.GAME_ACCEPTED + "|" + receivedMessage.split("[|]")[3] + "|" + usernameTextField.getText());	
-												}
+										JOptionPane.showMessageDialog(null, "You have been kicked from the chatroom", "Information", JOptionPane.INFORMATION_MESSAGE);	
+									} 
+									else if (command.equals(constants.START_USERNAME_CHANGE_INSTRUCTION)) 
+									{
+										Constants consts = new Constants();
 
-												String IPToConnectTo;
+										if (receivedMessage.split("[|]")[1].equals(consts.NEW_USER)) 
+										{
+											JOptionPane.showMessageDialog(null, "New user connected", "Information", JOptionPane.INFORMATION_MESSAGE);
+										} 
+										else 
+										{
+											JOptionPane.showMessageDialog(null, "A user was kicked", "Information", JOptionPane.INFORMATION_MESSAGE);
+										}
+											
+										IPListModel.clear();
+											
+										for (int index = 2; index < receivedMessage.split("[|]").length; index++) 
+										{
+											IPListModel.addElement(receivedMessage.split("[|]")[index]);
+										}
+											
+										IPList.setModel(IPListModel);
+									} 
+									else if (command.equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
+									{
+										if (prompt.showMessageBoxChoice(mainForm, "Question", "Do you want to receive a file from the user " + receivedMessage.split("[|]")[1] + " ?")) 
+										{
+											String_Manipulator stringManipulator = new String_Manipulator();
+															
+											String[] charactersToSplit = { "|", "\\\\" };
+											String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION;
+									
+											String[] parameters = 
+											{ 
+												clientConnection.getLocalAddress(), 
+												receivedMessage.split("[|]")[1] 
+											};
 												
-												if (receivedMessage.split("[|]")[3].equals("Host"))
-												{
-													IPToConnectTo = IPTextField.getText();
-												} 
-												else 
-												{
-													IPToConnectTo = receivedMessage.split("[|]")[1];
-												}
+											clientConnection.sendInstruction(constants.COMMAND_START + constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION, parameters);
+															
+											// again, I have no clue on why I have to wait
+											try { Thread.sleep(1000); } catch (Exception e1) { }
+														
+											clientConnection.receiveFile(saveLocation + stringManipulator.getLastWord(receivedMessage, charactersToSplit), constants.FILE_TRANSFER_PORT);
+										}
+									} 
+									else if(command.equals(constants.ASK_GAME)) 
+									{
+										if (prompt.showMessageBoxChoice(mainForm, "Question", "Do you want to play a game with the user " + receivedMessage.split("[|]")[3] + " ?")) 
+										{
+											// over here there is probably a conflict at the host end so my solution to fix this on time is to just flood the host with
+											// the same message until it gets verified, it will probably be removed later on although I make no promises
+											while (clientConnection.receiveMessage().equals(constants.COMMAND_START + constants.GAME_VERIFIED) == false) 
+											{
+												clientConnection.sendMessage(constants.COMMAND_START + constants.GAME_ACCEPTED + "|" + receivedMessage.split("[|]")[3] + "|" + usernameTextField.getText());	
+											}
+
+											String IPToConnectTo;
 												
-												try { Thread.sleep(100); } catch (InterruptedException e) { }
-												
-												TicTacToe game = new TicTacToe(true, false, IPToConnectTo, constants.GAME_PORT_START);
-												game.start();
+											if (receivedMessage.split("[|]")[3].equals("Host"))
+											{
+												IPToConnectTo = IPTextField.getText();
 											} 
 											else 
 											{
-												clientConnection.sendMessage(constants.COMMAND_START + constants.GAME_DECLINED);
+												IPToConnectTo = receivedMessage.split("[|]")[1];
 											}
-										}	
+												
+											try { Thread.sleep(100); } catch (InterruptedException e) { }
+												
+											TicTacToe game = new TicTacToe(true, false, IPToConnectTo, constants.GAME_PORT_START);
+											game.start();
+										} 
+										else 
+										{
+											clientConnection.sendMessage(constants.COMMAND_START + constants.GAME_DECLINED);
+										}
 									} 
-									else
+									else if (command.equals(constants.SEND_VOICE_MESSAGE_INSTRUCTION)) 
 									{
-										// if the response is not a command then add the message to the message history textbox
-										messagePane.setText(messagePane.getText() + receivedMessage + "\n");
-									}
-										
-									try 
-									{
-										Thread.sleep(10);	
-									} 
-									catch (InterruptedException error) 
-									{
-										error.printStackTrace();
-									}
-								}
-								catch (IOException receivedMessageException) 
-								{
-									try 
-									{
-										clientConnection.leave();
-										IPListModel.clear();
-									} 
-									catch (IOException leaveError) 
-									{
-										leaveError.printStackTrace();
+										if (prompt.showMessageBoxChoice(mainForm, "Question", "Do you want to receive a voice message ?")) 
+										{
+											clientConnection.sendMessage(constants.COMMAND_START + constants.ACCEPT_VOICE_MESSAGE + "|" + usernameTextField.getText());
+											String saveLocation = constants.DEFAULT_VOICE_MESSAGE_SAVE_LOCATION + constants.RECEIVED_VOICE_MESSAGE_FILENAME;
+											
+											new Thread(new Runnable() 
+											{
+												public void run() 
+												{
+													try { Thread.sleep(1000); } catch (InterruptedException e) { }
+													
+													try 
+													{
+														clientConnection.receiveFile(saveLocation, constants.VOICE_MESSAGE_TRANSFER_PORT);
+													} 
+													catch (IOException errorReceivingVoiceMessage) 
+													{
+														JOptionPane.showMessageDialog(null, "Error receiving voice message", "Error", JOptionPane.ERROR_MESSAGE);
+														errorReceivingVoiceMessage.printStackTrace();
+													}
+												}
+											}).start();
+										} 
+										else 
+										{
+											clientConnection.sendMessage(constants.COMMAND_START + constants.REJECT_VOICE_MESSAGE);
+										}
 									}
 								} 
+								else
+								{
+									// if the response is not a command then add the message to the message history textbox
+									messagePane.setText(messagePane.getText() + receivedMessage + "\n");
+								}
+										
+								try 
+								{
+									Thread.sleep(10);	
+								} 
+								catch (InterruptedException error) 
+								{
+									error.printStackTrace();
+								}
 							}
+							catch (IOException receivedMessageException) 
+							{
+								try 
+								{
+									clientConnection.leave();
+									IPListModel.clear();
+								} 
+								catch (IOException leaveError) 
+								{
+									leaveError.printStackTrace();
+								}
+							} 
 						}
-					}).start();
-				}
-				catch (InterruptedException connectionException) 
-				{
-					JOptionPane.showMessageDialog(null, "There was an error while connecting to the host", "Error", JOptionPane.ERROR_MESSAGE);
-				}
+					}
+				}).start();
 			} 
 			else
 			{
@@ -718,6 +748,7 @@ public class GUI implements ActionListener
 						String_Manipulator stringManipulator = new String_Manipulator();
 						
 						String receivedMessage = hostConnection.receiveMessages();
+						String command;
 						
 						if (receivedMessage == null)
 							continue;
@@ -725,14 +756,15 @@ public class GUI implements ActionListener
 						if (receivedMessage.charAt(0) == constants.COMMAND_START) 
 						{
 							receivedMessage = receivedMessage.substring(1);
+							command = receivedMessage.split("[|]")[0];
 							
-							if (receivedMessage.split("[|]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
+							if (command.equals(constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION)) 
 							{
 								try 
 								{
 									String[] charactersToSplit = { "|", "\\\\" };
 									filename = stringManipulator.getLastWord(receivedMessage, charactersToSplit);
-									String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + stringManipulator.getLastWord(receivedMessage, charactersToSplit);
+									String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION + stringManipulator.getLastWord(receivedMessage, charactersToSplit);
 										
 									hostConnection.receiveFile(saveLocation, receivedMessage.split("[|]")[2], constants.FILE_TRANSFER_PORT);
 									hostConnection.individualMessage(receivedMessage.split("[|]")[1], constants.COMMAND_START + constants.ASK_FILE_TRANSFER_APPROVAL_INSTRUCTION + "|" + receivedMessage.split("[|]")[2] + "|" + filename);
@@ -744,14 +776,14 @@ public class GUI implements ActionListener
 									e.printStackTrace();
 								}
 							} 
-							else if (receivedMessage.split("[|]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION) && sendFile) 
+							else if (command.equals(constants.ASK_FILE_TRANSFER_APPROVAL_ACCEPTED_INSTRUCTION) && sendFile) 
 							{
 								try 
 								{
 									// I never code in java so the code is in the same shape as the Greek economy
 									try { Thread.sleep(2000); } catch (Exception e1) { }
 									
-									String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + filename;
+									String saveLocation = constants.DEFAULTS_FILE_SAVE_LOCATION + filename;
 									String IP = receivedMessage.split("[|]")[1];
 									
 									hostConnection.sendFile(saveLocation, IP, constants.FILE_TRANSFER_PORT);
@@ -766,14 +798,14 @@ public class GUI implements ActionListener
 									e.printStackTrace();
 								}
 							} 
-							else if (receivedMessage.split("[|]")[0].equals(constants.ASK_FILE_TRANSFER_APPROVAL_DECLINED_INSTRUCTION)) 
+							else if (command.equals(constants.ASK_FILE_TRANSFER_APPROVAL_DECLINED_INSTRUCTION)) 
 							{
-								File toDelete = new File(constants.DEFAULTS_FILE_SAVE_LOCATION.replace("{USER}", System.getProperty("user.name")) + filename);
+								File toDelete = new File(constants.DEFAULTS_FILE_SAVE_LOCATION + filename);
 								toDelete.delete();
 									
 								sendFile = false;
 							} 
-							else if (receivedMessage.split("[|]")[0].equals(constants.ASK_GAME)) 
+							else if (command.equals(constants.ASK_GAME)) 
 							{
 								String toSend = receivedMessage.split("[|]")[1];
 								String IP = receivedMessage.split("[|]")[2];
@@ -797,7 +829,7 @@ public class GUI implements ActionListener
 									individualErrorMessage.printStackTrace();
 								}
 							} 
-							else if (receivedMessage.split("[|]")[0].equals(constants.GAME_ACCEPTED) || receivedMessage.split("[|]")[0].equals(constants.GAME_DECLINED)) 
+							else if (command.equals(constants.GAME_ACCEPTED) || receivedMessage.split("[|]")[0].equals(constants.GAME_DECLINED)) 
 							{
 								String response = receivedMessage.split("[|]")[0];
 								String username = receivedMessage.split("[|]")[1];
@@ -812,12 +844,54 @@ public class GUI implements ActionListener
 								{
 									individualMessageError.printStackTrace();
 								}
-							} else if (receivedMessage.split("[|]")[0].equals(constants.DISCONNECT_INSTRUCTION)) 
+							} 
+							else if (command.equals(constants.DISCONNECT_INSTRUCTION)) 
 							{
 								String username = receivedMessage.split("[|]")[1];
 								
 								hostConnection.close(username);
 								broadcastUsernames(false);
+							}
+							else if (command.equals(constants.SEND_VOICE_MESSAGE_INSTRUCTION))
+							{
+								String saveLocation = constants.DEFAULT_VOICE_MESSAGE_SAVE_LOCATION + "please end my misery.wav";
+								String userToReceiveFrom = receivedMessage.split("[|]")[1];
+								String userToSendTo = receivedMessage.split("[|]")[2];
+								
+								System.out.println(userToReceiveFrom);
+								
+								try
+								{
+									hostConnection.receiveFile(saveLocation, userToReceiveFrom, constants.VOICE_MESSAGE_TRANSFER_PORT);
+									hostConnection.individualMessage(userToSendTo, constants.COMMAND_START + receivedMessage);
+								} 
+								catch (IOException individualMessageError) 
+								{
+									individualMessageError.printStackTrace();
+								}
+							}
+							else if (command.equals(constants.ACCEPT_VOICE_MESSAGE))
+							{
+								try 
+								{
+									String saveLocation = constants.DEFAULT_VOICE_MESSAGE_SAVE_LOCATION + constants.VOICE_MESSAGE_FILENAME;
+									String IP = hostConnection.getIP();
+									
+									hostConnection.sendFile(saveLocation, IP, constants.VOICE_MESSAGE_TRANSFER_PORT);
+									
+									File toDelete = new File(constants.DEFAULT_VOICE_MESSAGE_SAVE_LOCATION + constants.VOICE_MESSAGE_FILENAME);
+									toDelete.delete();
+								} 
+								catch (IOException sendVoiceMessageError) 
+								{
+									JOptionPane.showMessageDialog(null, "There was an error while sending the voice message", "Error", JOptionPane.ERROR_MESSAGE);
+									sendVoiceMessageError.printStackTrace();
+								}
+							} 
+							else if (command.equals(constants.REJECT_VOICE_MESSAGE)) 
+							{
+								File toDelete = new File(constants.DEFAULT_VOICE_MESSAGE_SAVE_LOCATION + constants.VOICE_MESSAGE_FILENAME);
+								toDelete.delete();
 							}
 						} 
 						else 
@@ -826,14 +900,12 @@ public class GUI implements ActionListener
 							hostConnection.broadcastMessage(receivedMessage);	
 						}
 						
-						
 						try { Thread.sleep(100); } catch (InterruptedException threadSleepError) { threadSleepError.printStackTrace(); }
 					}
 				}
 			}).start();;
 			
 			hostOrClient = "HOST";
-			
 			
 			JOptionPane.showMessageDialog(null, "Now listening at port " + port, "Information", JOptionPane.INFORMATION_MESSAGE);
 		}
@@ -851,6 +923,8 @@ public class GUI implements ActionListener
 			}
 		}
 		
+		
+		// TO REFACTOR (one day)
 		if(e.getSource() == playButton) 
 		{
 			if (IPList.getSelectedIndex() == -1) 
@@ -1034,9 +1108,80 @@ public class GUI implements ActionListener
 				}).start();
 			}
 		}
-		if(e.getSource() == voiceMessageButton) {
-			record.main(null);
-			receivedMessages.main(null);
+		
+		if(e.getSource() == voiceMessageButton) 
+		{
+			if (IPList.getSelectedIndex() != -1) 
+			{				
+				recordWindow.init(currentThemeColour);
+				recordWindow.displayGUI();
+				
+				new Thread(new Runnable() 
+				{
+					public void run() 
+					{
+						Constants consts = new Constants();
+						File fileToSend;
+			
+						String filepath = consts.DEFAULT_VOICE_MESSAGE_SAVE_LOCATION + consts.VOICE_MESSAGE_FILENAME;
+						String clientToSendTo = IPList.getSelectedValue();
+						
+						do
+						{
+							fileToSend = new File(filepath);
+						}
+						while (running && recordWindow.isOpen() && recordWindow.recorded() == false);
+						
+						recordWindow.closeApplication();
+						
+						if (fileToSend.exists()) 
+						{
+							String userToSendTo = IPList.getSelectedValue().toString();
+							
+							if (hostOrClient.equals("HOST")) 
+							{
+								try 
+								{
+									hostConnection.individualMessage(clientToSendTo, consts.COMMAND_START + consts.SEND_VOICE_MESSAGE_INSTRUCTION + "|" + userToSendTo);
+								} 
+								catch (IOException individualMessageError) 
+								{
+									individualMessageError.printStackTrace();
+								}
+							} 
+							else if (hostOrClient.equals("CLIENT")) 
+							{
+								String[] instructionParameters = 
+								{
+									usernameTextField.getText(),
+									userToSendTo
+								};
+								
+								try 
+								{			
+									clientConnection.sendInstruction(consts.COMMAND_START + consts.SEND_VOICE_MESSAGE_INSTRUCTION, instructionParameters);
+									
+									try { Thread.sleep(1000); } catch (Exception e) { }
+									
+									clientConnection.sendFile(filepath, IPTextField.getText(), consts.VOICE_MESSAGE_TRANSFER_PORT);
+								}
+								catch (IOException sendVoiceMessageException) 
+								{
+									JOptionPane.showMessageDialog(null, "There was an error sending the voice message", "Error", JOptionPane.ERROR_MESSAGE);
+									sendVoiceMessageException.printStackTrace();
+								}
+							}
+						}
+						
+						fileToSend.delete();
+					}
+				}).start();
+			} 
+			else 
+			{
+				playWindow.init(currentThemeColour);
+				playWindow.displayGUI();
+			}
 		}
 	}
 
@@ -1045,14 +1190,12 @@ public class GUI implements ActionListener
 		textFieldPanel.setBackground(backgroundColour);
 		IPpanel.setBackground(backgroundColour);
 		convPanel.setBackground(backgroundColour);
-		enableEncryption.setBackground(backgroundColour);
 		controlsPanel.setBackground(backgroundColour);
 		
 		Theme.setBackground(backgroundColour);
 
 		IPlabel.setForeground(foregroundColour);
 		portLabel.setForeground(foregroundColour);
-		enableEncryption.setForeground(foregroundColour);
 			
 		voiceMessageButton.setForeground(foregroundColour);
 		uploadFileButton.setForeground(foregroundColour);
@@ -1083,7 +1226,9 @@ public class GUI implements ActionListener
 		messagePane.setBackground(backgroundColour);
 		messagePane.setForeground(foregroundColour);
 		writeMessagePane.setBackground(backgroundColour);
-			
+		
+		currentThemeColour = backgroundColour;
+		
 		if (writeMessagePane.getText().equals(" Write Something")) 
 		{
 			writeMessagePane.setForeground(Color.GRAY);		
@@ -1100,19 +1245,16 @@ public class GUI implements ActionListener
         {
         	hostConnection.closeAll();
         } 
-        else if (hostOrClient.equals("CLIENT"))
+        else if (hostOrClient.equals("CLIENT") && clientConnection.isConnected())
         {
-        	if (clientConnection.isConnected()) 
+        	try 
         	{
-	        	try 
-	        	{
-					clientConnection.leave();
-				} 
-	        	catch (IOException leaveError) 
-	        	{
-					leaveError.printStackTrace();
-				}
-        	}
+				clientConnection.leave();
+			} 
+	       	catch (IOException leaveError) 
+	       	{
+				leaveError.printStackTrace();
+			}
         }
 
 		running = false;
@@ -1130,7 +1272,8 @@ public class GUI implements ActionListener
 		if (newClient) 
 		{
 			usernames += constants.NEW_USER + "|";
-		} else 
+		} 
+		else 
 		{
 			usernames += "BANNED" + "|";
 		}
@@ -1156,7 +1299,6 @@ public class GUI implements ActionListener
 	
 	private boolean checkIfBanned() 
 	{
-		// TODO GET USERNAMES AND CHECK IF THE USERNAME IN QUESTION IS BANNED OR NOT
 		String[] usernameList = hostConnection.getUsarnames();
 		
 		for (int index = 0; index < usernameList.length; index++) 
@@ -1203,7 +1345,6 @@ public class GUI implements ActionListener
 	private JList<String> IPList = new JList<String>(IPListModel);
 	
 	private JComboBox<String> Theme = new JComboBox<String>();
-	private JRadioButton enableEncryption = new JRadioButton("Encryption");
 	
 	private JLabel IPlabel = new JLabel("IP List");
 	private JLabel portLabel = new JLabel("");
@@ -1212,6 +1353,7 @@ public class GUI implements ActionListener
 	
 	private Color lightTextColor = new Color(0xbebebe);
 	private Color darkerBG = new Color(0x252526);
+	private Color currentThemeColour = Color.WHITE;
 	
 	private Map<String, String> bannedUsernames = new HashMap<String, String>();
 	private boolean running = true;
@@ -1222,8 +1364,8 @@ public class GUI implements ActionListener
 	
 	private String hostOrClient = "NONE";
 	
-	private RecordNewMessage record = new RecordNewMessage();
-	private ReceivedVoiceMessages receivedMessages = new ReceivedVoiceMessages();
+	private Voice_Messages.RecordVoiceMessage recordWindow = new Voice_Messages.RecordVoiceMessage();
+	private Voice_Messages.ReceivedVoiceMessages playWindow = new Voice_Messages.ReceivedVoiceMessages();
 	
 	// -= Constants =-
 	private final int controlPanelWidth = 160;

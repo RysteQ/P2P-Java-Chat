@@ -142,6 +142,11 @@ public class Networking
 		{
 			for (int clientIndex = 0; clientIndex < usernames.length; clientIndex++) 
 			{
+				if (usernames[clientIndex] == null) 
+				{
+					continue;
+				}
+				
 				if (usernames[clientIndex].equals(clientUsername)) 
 				{
 					// connect to the sender
@@ -162,8 +167,10 @@ public class Networking
 			        byte[] buffer = new byte[4096];
 			        int bytes;
 			        
-			        while ((bytes = input.read(buffer)) > 0)
-			        	fileOutput.write(buffer, 0, bytes);
+			        while ((bytes = input.read(buffer)) > 0) 
+			        {
+			        	fileOutput.write(buffer, 0, bytes);	
+			        }
 
 			        // close all of the streams
 			        fileOutput.close();
@@ -255,7 +262,18 @@ public class Networking
 		
 		public String getIP() 
 		{
-			return serverSocket.getLocalSocketAddress().toString();
+			InetAddress IP;
+			
+			try 
+			{
+				IP = InetAddress.getLocalHost();
+				return IP.toString().split("[////]")[1];
+			} 
+			catch (UnknownHostException getIPError) 
+			{
+				getIPError.printStackTrace();
+				return null;
+			}
 		}
 		
 		public String[] getUsarnames() 

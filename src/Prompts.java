@@ -17,10 +17,12 @@ public class Prompts
 		
 		fileDialog.setFileFilter(extensions);
 		
-		if (fileDialog.showDialog(null, startingDirectory) == JFileChooser.APPROVE_OPTION)
-			return fileDialog.getSelectedFile().getAbsolutePath();
+		if (fileDialog.showDialog(null, startingDirectory) == JFileChooser.APPROVE_OPTION) 
+		{
+			return fileDialog.getSelectedFile().getAbsolutePath();	
+		}
 		
-		return "EMPTY";
+		return null;
 	}
 	
 	public boolean showMessageBoxChoice(JFrame mainWindow, String title, String contents) {

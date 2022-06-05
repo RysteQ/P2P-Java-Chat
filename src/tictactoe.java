@@ -16,9 +16,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import java.awt.Font;
 
-public class tictactoe implements ActionListener
+public class TicTacToe implements ActionListener
 {
-	public tictactoe(boolean singleOrMulti, boolean slaveOrMaster, String IP, int port)
+	public TicTacToe(boolean singleOrMulti, boolean slaveOrMaster, String IP, int port)
 	{
 		this.singleOrMulti = singleOrMulti;
 		this.slaveOrMaster = slaveOrMaster;
@@ -226,9 +226,12 @@ public class tictactoe implements ActionListener
 		frmTicTacToe.setBounds(100, 100, 450, 300);
 		frmTicTacToe.getContentPane().setLayout(null);
 		frmTicTacToe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		frmTicTacToe.addWindowListener(new WindowAdapter() {
+		
+		frmTicTacToe.addWindowListener(new WindowAdapter() 
+		{
 		    @Override
-		    public void windowClosing(WindowEvent event) {
+		    public void windowClosing(WindowEvent event) 
+		    {
 		        exitProcedure();
 		    }
 		});
@@ -665,10 +668,28 @@ public class tictactoe implements ActionListener
 		reset();
 	}
 	
-	public void exitProcedure() {
-		//############################ Here you can put the function you want before closing  ################################
+	public void exitProcedure() 
+	{
+		if (singleOrMulti) 
+		{
+			if (slaveOrMaster) 
+			{
+				serverConnection.closeAll();
+			} 
+			else 
+			{
+				try 
+				{
+					clientConnection.leave();
+				} 
+				catch (IOException e) 
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+		
 		frmTicTacToe.dispose();
-		System.exit(0);
 	}
 	
 	private JPanel playPanel = new JPanel();
