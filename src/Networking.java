@@ -99,9 +99,12 @@ public class Networking
 					{
 						receivedMessage = inputStream[index].readLine();
 						
-						if (receivedMessage.isBlank() == false && receivedMessage != null) 
+						if (receivedMessage != null) 
 						{
-							return receivedMessage;		
+							if (receivedMessage.isBlank() == false ) 
+							{
+								return receivedMessage;		
+							}	
 						}
 					}
 				}

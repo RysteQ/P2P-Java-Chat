@@ -329,9 +329,10 @@ public class GUI implements ActionListener
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) 
 				{
 					String sendMessage;
-					
-					if (messagePane.getText().charAt(0) == '@') 
+
+					if (writeMessagePane.getText().trim().length() != 0 && writeMessagePane.getText().trim().charAt(0) == '@') 
 					{
+						JOptionPane.showMessageDialog(null, "The character @ is not allowed as a starting character", "Error", JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					
@@ -707,8 +708,8 @@ public class GUI implements ActionListener
 			hostButton.setEnabled(false);
 			
 			int port = new Random().nextInt(60000) + 1000;
-			
 			hostConnection = new Networking.host(port);
+			hosting = true;
 			
 			connectButton.removeActionListener(this);
 			
@@ -718,14 +719,21 @@ public class GUI implements ActionListener
 				{
 					boolean banned = false;
 					
-					while (true && running) 
+					while (running && hosting) 
 					{
-						hostConnection.bind(true);
-						banned = checkIfBanned();
-						
-						if (banned == false) 
+						try 
 						{
-							broadcastUsernames(true);	
+							hostConnection.bind(true);
+							banned = checkIfBanned();
+							
+							if (banned == false) 
+							{
+								broadcastUsernames(true);	
+							}	
+						} 
+						catch (Exception e) 
+						{
+							e.printStackTrace();
 						}
 					}
 				}
@@ -739,7 +747,7 @@ public class GUI implements ActionListener
 					String filename = "";
 					boolean sendFile = false;
 					
-					while (true && running) 
+					while (hosting && running) 
 					{
 						hostConnection.broadcastMessage(" ");
 						portLabel.setText("Port: " + String.valueOf(port + hostConnection.getPortOffset()));
@@ -1042,7 +1050,10 @@ public class GUI implements ActionListener
 		{			
 			if (hostOrClient.equals("HOST")) 
 			{
+				hosting = false;
+				
 				hostConnection.closeAll();
+				portLabel.setText(" ");
 			} 
 			else if (hostOrClient.equals("CLIENT")) 
 			{
@@ -1073,40 +1084,37 @@ public class GUI implements ActionListener
 			hostOrClient = null;
 		}
 		
-		if(e.getSource() == kickButton) 
+		if(e.getSource() == kickButton && IPList.getSelectedIndex() != -1) 
 		{
 			if (hostOrClient.equals("HOST") == false)
 				return;
 			
-			if (IPList.getSelectedIndex() != -1) 
+			Constants consts = new Constants();
+			String username;
+				
+			username = IPList.getSelectedValue();
+				
+			try 
 			{
-				Constants consts = new Constants();
-				String username;
-				
-				username = IPList.getSelectedValue();
-				
-				try 
-				{
-					hostConnection.individualMessage(username, consts.COMMAND_START + consts.KICK_INSTRUCTION);
-					hostConnection.kickClient(username);
-				} 
-				catch (IOException sendKickInstructionError) 
-				{
-					sendKickInstructionError.printStackTrace();
-				}
-				
-				
-				bannedUsernames.put(username, username);
-				broadcastUsernames(false);
-				
-				new Thread(new Runnable() 
-				{
-					public void run() 
-					{
-						JOptionPane.showMessageDialog(null, "Kicked user " + username, "Information", JOptionPane.INFORMATION_MESSAGE);
-					}
-				}).start();
+				hostConnection.individualMessage(username, consts.COMMAND_START + consts.KICK_INSTRUCTION);
+				hostConnection.kickClient(username);
+			} 
+			catch (IOException sendKickInstructionError) 
+			{
+				sendKickInstructionError.printStackTrace();
 			}
+				
+				
+			bannedUsernames.put(username, username);
+			broadcastUsernames(false);
+				
+			new Thread(new Runnable() 
+			{
+				public void run() 
+				{
+					JOptionPane.showMessageDialog(null, "Kicked user " + username, "Information", JOptionPane.INFORMATION_MESSAGE);
+				}
+			}).start();
 		}
 		
 		if(e.getSource() == voiceMessageButton) 
@@ -1241,21 +1249,26 @@ public class GUI implements ActionListener
 	
 	private void closeApplication() 
 	{
-		if (hostOrClient.equals("HOST"))
-        {
-        	hostConnection.closeAll();
-        } 
-        else if (hostOrClient.equals("CLIENT") && clientConnection.isConnected())
-        {
-        	try 
-        	{
-				clientConnection.leave();
-			} 
-	       	catch (IOException leaveError) 
-	       	{
-				leaveError.printStackTrace();
-			}
-        }
+		if (hostOrClient != null) 
+		{
+			if (hostOrClient.equals("HOST"))
+	        {
+	        	hostConnection.closeAll();
+	        	
+	        	hosting = false;
+	        } 
+	        else if (hostOrClient.equals("CLIENT") && clientConnection.isConnected())
+	        {
+	        	try 
+	        	{
+					clientConnection.leave();
+				} 
+		       	catch (IOException leaveError) 
+		       	{
+					leaveError.printStackTrace();
+				}
+	        }	
+		}
 
 		running = false;
 		
@@ -1363,6 +1376,7 @@ public class GUI implements ActionListener
 	private Networking.host hostConnection;
 	
 	private String hostOrClient = "NONE";
+	private boolean hosting = false;
 	
 	private Voice_Messages.RecordVoiceMessage recordWindow = new Voice_Messages.RecordVoiceMessage();
 	private Voice_Messages.ReceivedVoiceMessages playWindow = new Voice_Messages.ReceivedVoiceMessages();
