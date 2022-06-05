@@ -3,6 +3,11 @@ import java.io.IOException;
 
 import javax.swing.JFrame;
 
+/*
+ * Σημείωμα: Δεν έχει κρυπτογράφηση και ηχητική κλήση
+ * Note: It doesn't have encryption or voice call functionality
+ */
+
 public class Main 
 {
 	public static void main(String[] args) throws IOException 
