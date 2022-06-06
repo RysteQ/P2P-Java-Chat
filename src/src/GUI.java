@@ -329,10 +329,9 @@ public class GUI implements ActionListener
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) 
 				{
 					String sendMessage;
-
-					if (writeMessagePane.getText().trim().length() != 0 && writeMessagePane.getText().trim().charAt(0) == '@') 
+					
+					if (messagePane.getText().charAt(0) == '@') 
 					{
-						JOptionPane.showMessageDialog(null, "The character @ is not allowed as a starting character", "Error", JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 					
@@ -708,8 +707,8 @@ public class GUI implements ActionListener
 			hostButton.setEnabled(false);
 			
 			int port = new Random().nextInt(60000) + 1000;
+			
 			hostConnection = new Networking.host(port);
-			hosting = true;
 			
 			connectButton.removeActionListener(this);
 			
@@ -719,21 +718,14 @@ public class GUI implements ActionListener
 				{
 					boolean banned = false;
 					
-					while (running && hosting) 
+					while (true && running) 
 					{
-						try 
+						hostConnection.bind(true);
+						banned = checkIfBanned();
+						
+						if (banned == false) 
 						{
-							hostConnection.bind(true);
-							banned = checkIfBanned();
-							
-							if (banned == false) 
-							{
-								broadcastUsernames(true);	
-							}	
-						} 
-						catch (Exception e) 
-						{
-							e.printStackTrace();
+							broadcastUsernames(true);	
 						}
 					}
 				}
@@ -747,7 +739,7 @@ public class GUI implements ActionListener
 					String filename = "";
 					boolean sendFile = false;
 					
-					while (hosting && running) 
+					while (true && running) 
 					{
 						hostConnection.broadcastMessage(" ");
 						portLabel.setText("Port: " + String.valueOf(port + hostConnection.getPortOffset()));
@@ -941,112 +933,107 @@ public class GUI implements ActionListener
 				singleGame.start();
 			}
 			else 
-			{
-				Thread hostPlayThread = new Thread(new Runnable() 
-				{
-					public void run()
+			{	
+				if (hostOrClient.equals("CLIENT")) 
+				{	
+					new Thread(new Runnable() 
 					{
-						Constants consts = new Constants();
-						String opponentResponse = null;
-						String opponentIP = "";
-						
-						try 
+						public void run()
 						{
-							hostConnection.individualMessage(IPList.getSelectedValue(), 
-								consts.COMMAND_START 
-								+ consts.ASK_GAME 
-								+ "|" 
-								+ "NULL"
-								+ "|" 
-								+ consts.GAME_PORT_START 
-								+ "|"
-								+ "Host"
-							);
-
-							do 
+							Constants consts = new Constants();
+							String opponentResponse = null;
+							
+							String[] arguments = 
 							{
-								while (opponentResponse == null && running) 
+								IPList.getSelectedValue(),
+								clientConnection.getLocalAddress(),
+								usernameTextField.getText()
+							};
+							
+							try 
+							{
+								clientConnection.sendInstruction(consts.COMMAND_START + consts.ASK_GAME, arguments);
+
+								do 
 								{
-									opponentResponse = hostConnection.receiveMessages();
+									opponentResponse = clientConnection.receiveMessage();
+									opponentResponse = opponentResponse.substring(1);
+								} 
+								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
+								
+								if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
+								{
+									TicTacToe game = new TicTacToe(true, true, "NULL", consts.GAME_PORT_START);
+									game.start();
+								} 
+								else 
+								{
+									JOptionPane.showMessageDialog(null, "Opponent declined", "Error", JOptionPane.ERROR_MESSAGE);	
 								}
-								
-								hostConnection.individualMessage(IPList.getSelectedValue(), 
-									consts.COMMAND_START
-									+ consts.GAME_VERIFIED
-								);
-								
-								opponentResponse = opponentResponse.substring(1);
 							} 
-							while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
-						} 
-						catch (IOException error) 
-						{
-							error.printStackTrace();
-						}
-						
-						if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
-						{
-							opponentIP = hostConnection.getUserIP(IPList.getSelectedValue());
-
-							TicTacToe game = new TicTacToe(true, true, opponentIP, consts.GAME_PORT_START);
-							game.start();
-						} 
-						else 
-						{
-							JOptionPane.showMessageDialog(null, "Opponent declined", "Error", JOptionPane.ERROR_MESSAGE);	
-						}
-					}
-				});
-				
-				Thread clientPlayThread = new Thread(new Runnable() 
-				{
-					public void run()
-					{
-						Constants consts = new Constants();
-						String opponentResponse = null;
-						
-						String[] arguments = 
-						{
-							IPList.getSelectedValue(),
-							clientConnection.getLocalAddress(),
-							usernameTextField.getText()
-						};
-						
-						try 
-						{
-							clientConnection.sendInstruction(consts.COMMAND_START + consts.ASK_GAME, arguments);
-
-							do 
+							catch (IOException error) 
 							{
-								opponentResponse = clientConnection.receiveMessage();
-								opponentResponse = opponentResponse.substring(1);
+								error.printStackTrace();
+							}
+						}
+					}).start();
+				} else if (hostOrClient.equals("HOST")) 
+				{
+					new Thread(new Runnable() 
+					{
+						public void run()
+						{
+							Constants consts = new Constants();
+							String opponentResponse = null;
+							String opponentIP = "";
+							
+							try 
+							{
+								hostConnection.individualMessage(IPList.getSelectedValue(), 
+									consts.COMMAND_START 
+									+ consts.ASK_GAME 
+									+ "|" 
+									+ "NULL"
+									+ "|" 
+									+ consts.GAME_PORT_START 
+									+ "|"
+									+ "Host"
+								);
+
+								do 
+								{
+									while (opponentResponse == null && running) 
+									{
+										opponentResponse = hostConnection.receiveMessages();
+									}
+									
+									hostConnection.individualMessage(IPList.getSelectedValue(), 
+										consts.COMMAND_START
+										+ consts.GAME_VERIFIED
+									);
+									
+									opponentResponse = opponentResponse.substring(1);
+								} 
+								while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
 							} 
-							while ((opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED) || opponentResponse.split("[|]")[0].equals(consts.GAME_DECLINED)) == false && running);
+							catch (IOException error) 
+							{
+								error.printStackTrace();
+							}
 							
 							if (opponentResponse.split("[|]")[0].equals(consts.GAME_ACCEPTED))
 							{
-								TicTacToe game = new TicTacToe(true, true, "NULL", consts.GAME_PORT_START);
+								opponentIP = hostConnection.getUserIP(IPList.getSelectedValue());
+
+								TicTacToe game = new TicTacToe(true, true, opponentIP, consts.GAME_PORT_START);
 								game.start();
 							} 
 							else 
 							{
 								JOptionPane.showMessageDialog(null, "Opponent declined", "Error", JOptionPane.ERROR_MESSAGE);	
 							}
-						} 
-						catch (IOException error) 
-						{
-							error.printStackTrace();
 						}
-					}
-				});
-				
-				if (hostOrClient.equals("CLIENT")) 
-				{	
-					clientPlayThread.start();
-				} 
-				else if (hostOrClient.equals("HOST")) 
-				{
-					hostPlayThread.start();
+					}).start();
 				}
 			}
 		}
@@ -1055,10 +1042,7 @@ public class GUI implements ActionListener
 		{			
 			if (hostOrClient.equals("HOST")) 
 			{
-				hosting = false;
-				
 				hostConnection.closeAll();
-				portLabel.setText(" ");
 			} 
 			else if (hostOrClient.equals("CLIENT")) 
 			{
@@ -1089,37 +1073,40 @@ public class GUI implements ActionListener
 			hostOrClient = null;
 		}
 		
-		if(e.getSource() == kickButton && IPList.getSelectedIndex() != -1) 
+		if(e.getSource() == kickButton) 
 		{
 			if (hostOrClient.equals("HOST") == false)
 				return;
 			
-			Constants consts = new Constants();
-			String username;
-				
-			username = IPList.getSelectedValue();
-				
-			try 
+			if (IPList.getSelectedIndex() != -1) 
 			{
-				hostConnection.individualMessage(username, consts.COMMAND_START + consts.KICK_INSTRUCTION);
-				hostConnection.kickClient(username);
-			} 
-			catch (IOException sendKickInstructionError) 
-			{
-				sendKickInstructionError.printStackTrace();
-			}
+				Constants consts = new Constants();
+				String username;
 				
+				username = IPList.getSelectedValue();
 				
-			bannedUsernames.put(username, username);
-			broadcastUsernames(false);
-				
-			new Thread(new Runnable() 
-			{
-				public void run() 
+				try 
 				{
-					JOptionPane.showMessageDialog(null, "Kicked user " + username, "Information", JOptionPane.INFORMATION_MESSAGE);
+					hostConnection.individualMessage(username, consts.COMMAND_START + consts.KICK_INSTRUCTION);
+					hostConnection.kickClient(username);
+				} 
+				catch (IOException sendKickInstructionError) 
+				{
+					sendKickInstructionError.printStackTrace();
 				}
-			}).start();
+				
+				
+				bannedUsernames.put(username, username);
+				broadcastUsernames(false);
+				
+				new Thread(new Runnable() 
+				{
+					public void run() 
+					{
+						JOptionPane.showMessageDialog(null, "Kicked user " + username, "Information", JOptionPane.INFORMATION_MESSAGE);
+					}
+				}).start();
+			}
 		}
 		
 		if(e.getSource() == voiceMessageButton) 
@@ -1254,26 +1241,21 @@ public class GUI implements ActionListener
 	
 	private void closeApplication() 
 	{
-		if (hostOrClient != null) 
-		{
-			if (hostOrClient.equals("HOST"))
-	        {
-	        	hostConnection.closeAll();
-	        	
-	        	hosting = false;
-	        } 
-	        else if (hostOrClient.equals("CLIENT") && clientConnection.isConnected())
-	        {
-	        	try 
-	        	{
-					clientConnection.leave();
-				} 
-		       	catch (IOException leaveError) 
-		       	{
-					leaveError.printStackTrace();
-				}
-	        }	
-		}
+		if (hostOrClient.equals("HOST"))
+        {
+        	hostConnection.closeAll();
+        } 
+        else if (hostOrClient.equals("CLIENT") && clientConnection.isConnected())
+        {
+        	try 
+        	{
+				clientConnection.leave();
+			} 
+	       	catch (IOException leaveError) 
+	       	{
+				leaveError.printStackTrace();
+			}
+        }
 
 		running = false;
 		
@@ -1381,7 +1363,6 @@ public class GUI implements ActionListener
 	private Networking.host hostConnection;
 	
 	private String hostOrClient = "NONE";
-	private boolean hosting = false;
 	
 	private Voice_Messages.RecordVoiceMessage recordWindow = new Voice_Messages.RecordVoiceMessage();
 	private Voice_Messages.ReceivedVoiceMessages playWindow = new Voice_Messages.ReceivedVoiceMessages();
