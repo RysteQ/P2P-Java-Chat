@@ -723,9 +723,9 @@ public class TicTacToe implements ActionListener
 	private JLabel defeatsShow = new JLabel("0");
 	
 	private JFrame frmTicTacToe;
-	private ImageIcon ticTacToeIcon = new ImageIcon(this.getClass().getResource("/tic-tac-toe.png"));
-	private ImageIcon circleIcon = new ImageIcon(this.getClass().getResource("/circle.png"));
-	private ImageIcon xIcon = new ImageIcon(this.getClass().getResource("/x.png"));
+	private ImageIcon ticTacToeIcon = new ImageIcon(this.getClass().getResource("/resources/tic-tac-toe.png"));
+	private ImageIcon circleIcon = new ImageIcon(this.getClass().getResource("/resources/circle.png"));
+	private ImageIcon xIcon = new ImageIcon(this.getClass().getResource("/resources/x.png"));
 	
 	private int turn = 0;
 	private String[][] table = new String[3][3];

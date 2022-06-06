@@ -188,7 +188,7 @@ public class Voice_Messages
 		private JButton startRecordingButton = new JButton("Record");
 		private JButton stopRecordingButton = new JButton("Stop");
 
-		private ImageIcon recordIcon = new ImageIcon(getClass().getResource("\\recordIcon.png"));
+		private ImageIcon recordIcon = new ImageIcon(getClass().getResource("/resources/recordIcon.png"));
 		private JFrame form;
 		
 		AudioFormat recorder;
@@ -336,7 +336,7 @@ public class Voice_Messages
 		private JButton playReceivedVoiceMessage = new JButton("Play");
 		private JButton stopPlayingReceivedVoiceMessage = new JButton("Stop");
 		
-		private ImageIcon recordIcon = new ImageIcon(getClass().getResource("\\recordIcon.png"));
+		private ImageIcon recordIcon = new ImageIcon(getClass().getResource("/resources/recordIcon.png"));
 		private JFrame form;
 	
 		private Clip audioController;

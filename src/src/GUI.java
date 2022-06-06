@@ -49,7 +49,7 @@ public class GUI implements ActionListener
 		mainForm.getContentPane().setBackground(Color.WHITE);
 		mainForm.setBackground(Color.WHITE);
 
-		ImageIcon P2Picon = new ImageIcon(this.getClass().getResource("/P2P.png"));
+		ImageIcon P2Picon = new ImageIcon(this.getClass().getResource("/resources/P2P.png"));
 		mainForm.setIconImage(P2Picon.getImage());
 		
 		mainForm.addWindowListener(new WindowAdapter() 
@@ -152,7 +152,7 @@ public class GUI implements ActionListener
 		kickButton.setFont(new Font("Arial", Font.BOLD, 25));
 		leaveButton.setFont(new Font("Arial", Font.BOLD, 25));
 
-		ImageIcon micIcon = new ImageIcon(this.getClass().getResource("/microphone.png"));
+		ImageIcon micIcon = new ImageIcon(this.getClass().getResource("/resources/microphone.png"));
 		voiceMessageButton.setIcon(micIcon);
 
 		controlsPanel.add(voiceMessageButton);
@@ -227,7 +227,7 @@ public class GUI implements ActionListener
 		IPlabel.setBounds(10, 11, 105, 19);
 		portLabel.setBounds(40, 315, 85, 20);
 		
-		ImageIcon IPicon = new ImageIcon(this.getClass().getResource("/ip-address.png"));
+		ImageIcon IPicon = new ImageIcon(this.getClass().getResource("/resources/ip-address.png"));
 		IPlabel.setIcon(IPicon);
 		
 		IPpanel.add(IPlabel);
